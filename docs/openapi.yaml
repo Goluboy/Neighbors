@@ -1,0 +1,2838 @@
+openapi: 3.1.0
+info:
+  title: Neighborhood Rental API
+  description: |
+    Платформа для обмена вещами между соседями в пределах ЖК/микрорайона.
+    Аренда инструментов, техники, спортинвентаря с системой залогов,
+    рейтингов и модерации споров.
+  version: 0.0.0
+  contact:
+    name: API Support
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Локальная разработка
+  - url: https://api.example.com/v1
+    description: Production
+
+tags:
+  - name: auth
+    description: Регистрация с подтверждением телефона и вход по паролю
+  - name: users
+    description: Профиль пользователя
+  - name: categories
+    description: Справочник категорий
+  - name: items
+    description: Объявления о вещах
+  - name: catalog
+    description: Витрина и поиск
+  - name: bookings
+    description: Бронирования и жизненный цикл сделки
+  - name: chat
+    description: Сообщения в рамках брони
+  - name: reviews
+    description: Оценки и отзывы
+  - name: wallet
+    description: Виртуальный баланс и транзакции
+  - name: notifications
+    description: Уведомления
+  - name: reports
+    description: Жалобы пользователей
+  - name: media
+    description: Загрузка изображений
+  - name: geo
+    description: Геокодирование адресов и координат
+  - name: admin
+    description: Модерация и администрирование
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ==================== AUTH ====================
+  /auth/phone/send-code:
+    post:
+      tags: [auth]
+      summary: Отправить SMS-код (регистрация / сброс пароля)
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SendCodeRequest"
+      responses:
+        "200":
+          description: Код отправлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SendCodeResponse"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /auth/register:
+    post:
+      tags: [auth]
+      summary: Регистрация по коду из SMS с заданием пароля
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Аккаунт создан, токены выданы
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Вход по номеру телефона и паролю
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: Успешная авторизация
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
+
+  /auth/refresh:
+    post:
+      tags: [auth]
+      summary: Обновить access-токен
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RefreshRequest"
+      responses:
+        "200":
+          description: Новые токены
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  /auth/logout:
+    post:
+      tags: [auth]
+      summary: Выйти из системы (инвалидировать refresh)
+      responses:
+        "204":
+          description: Успешный выход
+
+  /auth/password/reset:
+    post:
+      tags: [auth]
+      summary: Восстановить пароль по коду из SMS
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequest"
+      responses:
+        "204":
+          description: Пароль изменён
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /auth/password/change:
+    post:
+      tags: [auth]
+      summary: Сменить пароль (авторизованный пользователь)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordChangeRequest"
+      responses:
+        "204":
+          description: Пароль изменён
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+
+  # ==================== USERS ====================
+  /users/me:
+    get:
+      tags: [users]
+      summary: Текущий пользователь
+      responses:
+        "200":
+          description: Профиль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+    patch:
+      tags: [users]
+      summary: Обновить профиль
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Обновлённый профиль
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserProfile"
+
+  /users/me/location:
+    put:
+      tags: [users]
+      summary: Установить точку проживания
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LocationUpdate"
+      responses:
+        "200":
+          description: Точка обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Location"
+
+  /users/me/history:
+    get:
+      tags: [users]
+      summary: История операций (заказы, транзакции, оценки)
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: История
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryResponse"
+
+  /users/{id}/public:
+    get:
+      tags: [users]
+      summary: Публичный профиль
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Публичные данные
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicUser"
+
+  /users/{id}/reviews:
+    get:
+      tags: [reviews]
+      summary: Публичные отзывы о пользователе
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Список отзывов
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ReviewListResponse"
+
+  /users/{id}/items:
+    get:
+      tags: [items]
+      summary: Объявления пользователя
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ItemStatus"
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Список объявлений
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemListResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ==================== GEO ====================
+  /geo/geocode:
+    get:
+      tags: [geo]
+      summary: Координаты по введённому адресу
+      description: |
+        Используется при вводе адреса точки проживания (UC-2).
+        Возвращает список подходящих мест для выбора пользователем.
+      security: []
+      parameters:
+        - name: address
+          in: query
+          required: true
+          schema:
+            type: string
+        - name: city
+          in: query
+          description: Ограничить поиск городом
+          schema:
+            type: string
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Найденные места
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GeoPlace"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  /geo/reverse:
+    get:
+      tags: [geo]
+      summary: Адрес по координатам
+      description: Обратное геокодирование для выбора точки на карте (UC-2).
+      security: []
+      parameters:
+        - name: lat
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+        - name: lon
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+      responses:
+        "200":
+          description: Адрес
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GeoPlace"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ==================== CATEGORIES ====================
+  /categories:
+    get:
+      tags: [categories]
+      summary: Список активных категорий
+      security: []
+      responses:
+        "200":
+          description: Список категорий
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+
+  /categories/{slug}:
+    get:
+      tags: [categories]
+      summary: Детали категории
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Категория
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  # ==================== MEDIA ====================
+  /uploads:
+    post:
+      tags: [media]
+      summary: Загрузить изображение до создания объявления
+      description: |
+        Возвращает идентификатор, который затем передаётся в `photo_ids`
+        при создании/обновлении объявления.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+              required: [file]
+      responses:
+        "201":
+          description: Изображение загружено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Media"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+
+  # ==================== ITEMS ====================
+  /items:
+    post:
+      tags: [items]
+      summary: Создать объявление
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemCreate"
+      responses:
+        "201":
+          description: Созданное объявление
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+
+  /items/me:
+    get:
+      tags: [items]
+      summary: Мои объявления
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ItemStatus"
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Список объявлений
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemListResponse"
+
+  /items/{id}:
+    get:
+      tags: [items]
+      summary: Карточка вещи
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Карточка
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemDetails"
+    patch:
+      tags: [items]
+      summary: Обновить объявление (только владелец)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemUpdate"
+      responses:
+        "200":
+          description: Обновлённое объявление
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+    delete:
+      tags: [items]
+      summary: Удалить объявление (только если нет активных броней)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: Удалено
+
+  /items/{id}/hide:
+    post:
+      tags: [items]
+      summary: Скрыть из выдачи
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Скрыто
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+
+  /items/{id}/show:
+    post:
+      tags: [items]
+      summary: Вернуть в выдачу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Опубликовано
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Item"
+
+  /items/{id}/photos:
+    post:
+      tags: [items]
+      summary: Загрузить фото
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                is_main:
+                  type: boolean
+      responses:
+        "201":
+          description: Фото загружено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Photo"
+
+  /items/{id}/photos/{photo_id}:
+    delete:
+      tags: [items]
+      summary: Удалить фото
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: photo_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: Удалено
+    patch:
+      tags: [items]
+      summary: Изменить фото (сделать главным / порядок)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: photo_id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhotoUpdate"
+      responses:
+        "200":
+          description: Фото обновлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Photo"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /items/{id}/availability:
+    get:
+      tags: [items]
+      summary: Проверить доступность вещи на даты
+      description: Позволяет узнать, свободна ли вещь до запроса бронирования (UC-3).
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: from
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Результат проверки
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AvailabilityResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /items/{id}/questions:
+    get:
+      tags: [items]
+      summary: Вопросы по объявлению
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Список вопросов
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemQuestionListResponse"
+    post:
+      tags: [items]
+      summary: Задать вопрос владельцу до бронирования
+      description: |
+        Сценарий «Задать вопрос» из UC-3: уточнение деталей без создания
+        заказа и без холдирования залога.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemQuestionCreate"
+      responses:
+        "201":
+          description: Вопрос отправлен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemQuestion"
+
+  /questions/{id}/answer:
+    post:
+      tags: [items]
+      summary: Ответить на вопрос (владелец)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItemQuestionAnswer"
+      responses:
+        "200":
+          description: Ответ сохранён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ItemQuestion"
+
+  # ==================== CATALOG ====================
+  /catalog:
+    get:
+      tags: [catalog]
+      summary: Витрина с поиском и фильтрами
+      security: []
+      parameters:
+        - name: category_id
+          in: query
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - name: q
+          in: query
+          description: Текстовый поиск
+          schema:
+            type: string
+        - name: radius_km
+          in: query
+          description: Радиус локальной выдачи (км)
+          schema:
+            type: number
+            default: 1.5
+        - name: mode
+          in: query
+          description: Режим выдачи
+          schema:
+            type: string
+            enum: [local, city]
+            default: local
+        - name: sort
+          in: query
+          description: Сортировка выдачи
+          schema:
+            type: string
+            enum: [relevance, distance, newest, rating, price_asc, price_desc]
+            default: relevance
+        - name: deal_type
+          in: query
+          description: Формат сделки
+          schema:
+            $ref: "#/components/schemas/DealType"
+        - name: deposit_max
+          in: query
+          description: Максимальный размер залога
+          schema:
+            type: number
+            format: decimal
+            minimum: 0
+        - name: available_from
+          in: query
+          description: Начало периода, когда вещь должна быть свободна
+          schema:
+            type: string
+            format: date-time
+        - name: available_to
+          in: query
+          description: Конец периода, когда вещь должна быть свободна
+          schema:
+            type: string
+            format: date-time
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Список вещей
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CatalogResponse"
+
+  # ==================== BOOKINGS ====================
+  /bookings:
+    post:
+      tags: [bookings]
+      summary: Создать заявку на аренду
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingCreate"
+      responses:
+        "201":
+          description: Заявка создана, залог захолдирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          description: Вещь уже забронирована или недостаточно средств
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+  /bookings/me:
+    get:
+      tags: [bookings]
+      summary: Мои бронирования
+      parameters:
+        - name: as
+          in: query
+          description: Роль
+          schema:
+            type: string
+            enum: [renter, owner]
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/BookingStatus"
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Список броней
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingListResponse"
+
+  /bookings/{id}:
+    get:
+      tags: [bookings]
+      summary: Детали брони
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Детали
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingDetails"
+
+  /bookings/{id}/history:
+    get:
+      tags: [bookings]
+      summary: История статусов брони
+      description: Нужна сторонам и модератору при разборе спора (UC-9).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: События брони
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BookingHistoryResponse"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /bookings/{id}/approve:
+    post:
+      tags: [bookings]
+      summary: Одобрить заявку (владелец)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Одобрено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}/reject:
+    post:
+      tags: [bookings]
+      summary: Отклонить заявку (владелец)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Отклонено, залог разморожен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}/cancel:
+    post:
+      tags: [bookings]
+      summary: Отменить заявку (арендатор)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Отменено, залог разморожен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}/confirm-receipt:
+    post:
+      tags: [bookings]
+      summary: Подтвердить получение вещи (арендатор)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Статус 'rented', таймер запущен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}/refuse-on-inspection:
+    post:
+      tags: [bookings]
+      summary: Отказаться от аренды при осмотре
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+      responses:
+        "200":
+          description: Сделка аннулирована, залог разморожен
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}/initiate-return:
+    post:
+      tags: [bookings]
+      summary: Инициировать возврат (арендатор)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Владелец уведомлён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}/confirm-return:
+    post:
+      tags: [bookings]
+      summary: Подтвердить возврат без повреждений (владелец)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Залог разморожен, статус 'returned'
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  /bookings/{id}/report-issue:
+    post:
+      tags: [bookings]
+      summary: Сообщить о проблеме (владелец) → спор
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BookingIssueCreate"
+      responses:
+        "200":
+          description: Статус 'disputed', подключён модератор
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Booking"
+
+  # ==================== CHAT ====================
+  /bookings/{id}/messages:
+    get:
+      tags: [chat]
+      summary: История сообщений
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Сообщения
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageListResponse"
+    post:
+      tags: [chat]
+      summary: Отправить сообщение
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MessageCreate"
+      responses:
+        "201":
+          description: Сообщение отправлено
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Message"
+
+  /bookings/{id}/messages/read:
+    post:
+      tags: [chat]
+      summary: Пометить сообщения прочитанными
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                last_read_message_id:
+                  $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: Обновлено
+
+  /chats/unread-count:
+    get:
+      tags: [chat]
+      summary: Счётчик непрочитанных по всем сделкам
+      responses:
+        "200":
+          description: Количество
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_unread:
+                    type: integer
+
+  # ==================== REVIEWS ====================
+  /bookings/{id}/reviews:
+    post:
+      tags: [reviews]
+      summary: Поставить оценку
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReviewCreate"
+      responses:
+        "201":
+          description: Оценка сохранена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Review"
+    get:
+      tags: [reviews]
+      summary: Обе оценки по сделке (только стороны)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Оценки
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Review"
+
+  /reviews/pending:
+    get:
+      tags: [reviews]
+      summary: Сделки, ожидающие моей оценки
+      description: |
+        Окно оценки после возврата вещи (UC-5). Если оценка не поставлена
+        до дедлайна, она пропускается и на рейтинг не влияет.
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Ожидающие оценки
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PendingReviewListResponse"
+
+  # ==================== WALLET ====================
+  /wallet:
+    get:
+      tags: [wallet]
+      summary: Баланс
+      responses:
+        "200":
+          description: Баланс
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/top-up:
+    post:
+      tags: [wallet]
+      summary: Пополнить баланс (учебная заглушка)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: decimal
+                  minimum: 0
+              required: [amount]
+      responses:
+        "200":
+          description: Обновлённый баланс
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/transactions:
+    get:
+      tags: [wallet]
+      summary: История транзакций
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [deposit, withdrawal, hold, release, charge]
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Транзакции
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionListResponse"
+
+  # ==================== NOTIFICATIONS ====================
+  /notifications:
+    get:
+      tags: [notifications]
+      summary: Лента уведомлений
+      parameters:
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Уведомления
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationListResponse"
+
+  /notifications/read:
+    post:
+      tags: [notifications]
+      summary: Пометить прочитанными
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                ids:
+                  type: array
+                  items:
+                    $ref: "#/components/schemas/UUID"
+                all:
+                  type: boolean
+      responses:
+        "204":
+          description: Обновлено
+
+  /notifications/settings:
+    get:
+      tags: [notifications]
+      summary: Настройки уведомлений
+      responses:
+        "200":
+          description: Настройки
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+    put:
+      tags: [notifications]
+      summary: Обновить настройки
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationSettings"
+      responses:
+        "200":
+          description: Обновлённые настройки
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotificationSettings"
+
+  /notifications/unread-count:
+    get:
+      tags: [notifications]
+      summary: Количество непрочитанных уведомлений
+      responses:
+        "200":
+          description: Количество
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_unread:
+                    type: integer
+
+  /notifications/push/subscribe:
+    post:
+      tags: [notifications]
+      summary: Подписаться на браузерные push-уведомления
+      description: Браузерная подписка для веб-версии (UC-8).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PushSubscription"
+      responses:
+        "204":
+          description: Подписка сохранена
+    delete:
+      tags: [notifications]
+      summary: Отписаться от браузерных push-уведомлений
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                endpoint:
+                  type: string
+              required: [endpoint]
+      responses:
+        "204":
+          description: Подписка удалена
+
+  # ==================== REPORTS ====================
+  /reports:
+    post:
+      tags: [reports]
+      summary: Пожаловаться на контент/пользователя
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportCreate"
+      responses:
+        "201":
+          description: Жалоба принята
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+
+  /reports/me:
+    get:
+      tags: [reports]
+      summary: Мои жалобы
+      responses:
+        "200":
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+
+  # ==================== ADMIN ====================
+  /admin/disputes:
+    get:
+      tags: [admin]
+      summary: Очередь споров
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/DisputeStatus"
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Список споров
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Dispute"
+
+  /admin/disputes/{id}:
+    get:
+      tags: [admin]
+      summary: Детали спора с контекстом
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Детали
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisputeDetails"
+
+  /admin/disputes/{id}/resolve:
+    post:
+      tags: [admin]
+      summary: Разрешить спор
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisputeResolution"
+      responses:
+        "200":
+          description: Спор разрешён
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Dispute"
+
+  /admin/reports:
+    get:
+      tags: [admin]
+      summary: Очередь жалоб на контент
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, resolved, dismissed]
+        - name: target_type
+          in: query
+          schema:
+            type: string
+            enum: [item, message, user]
+      responses:
+        "200":
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+
+  /admin/reports/{id}/resolve:
+    post:
+      tags: [admin]
+      summary: Разрешить жалобу
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ReportResolveRequest"
+      responses:
+        "200":
+          description: Жалоба обработана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+
+  /admin/items:
+    get:
+      tags: [admin]
+      summary: Объявления для модерации
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ItemStatus"
+        - name: q
+          in: query
+          description: Поиск по названию/описанию
+          schema:
+            type: string
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Список объявлений
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminItemListResponse"
+
+  /admin/users:
+    get:
+      tags: [admin]
+      summary: Список пользователей (поиск для модерации)
+      parameters:
+        - name: q
+          in: query
+          description: Поиск по имени или телефону
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, blocked]
+        - $ref: "#/components/parameters/CursorParam"
+        - $ref: "#/components/parameters/LimitParam"
+      responses:
+        "200":
+          description: Список пользователей
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserListResponse"
+
+  /admin/users/{id}:
+    get:
+      tags: [admin]
+      summary: Карточка пользователя для модерации
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Пользователь
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserDetails"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /admin/users/{id}/ban:
+    post:
+      tags: [admin]
+      summary: Заблокировать пользователя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                duration_days:
+                  type: integer
+                  description: 0 = навсегда
+      responses:
+        "200":
+          description: Заблокирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicUser"
+
+  /admin/users/{id}/unban:
+    post:
+      tags: [admin]
+      summary: Разблокировать пользователя
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "200":
+          description: Разблокирован
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicUser"
+
+  /admin/categories:
+    get:
+      tags: [admin]
+      summary: Все категории (включая неактивные)
+      responses:
+        "200":
+          description: Список
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+    post:
+      tags: [admin]
+      summary: Создать категорию
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryCreate"
+      responses:
+        "201":
+          description: Создана
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+
+  /admin/categories/{id}:
+    patch:
+      tags: [admin]
+      summary: Обновить категорию
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CategoryCreate"
+      responses:
+        "200":
+          description: Обновлена
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+    delete:
+      tags: [admin]
+      summary: Удалить категорию (только если нет привязанных вещей)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            $ref: "#/components/schemas/UUID"
+      responses:
+        "204":
+          description: Удалена
+
+# ==================== COMPONENTS ====================
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    CursorParam:
+      name: cursor
+      in: query
+      schema:
+        type: string
+    LimitParam:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+
+  schemas:
+    UUID:
+      type: string
+      format: uuid
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+          required: [code, message]
+      required: [error]
+
+    SendCodeRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          example: "+79991234567"
+        purpose:
+          type: string
+          description: Для чего запрошен код
+          enum: [registration, password_reset]
+          default: registration
+      required: [phone]
+
+    SendCodeResponse:
+      type: object
+      properties:
+        code_ttl_seconds:
+          type: integer
+        retry_after_seconds:
+          type: integer
+
+    RegisterRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          example: "+79991234567"
+        code:
+          type: string
+          description: Код из SMS
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+        name:
+          type: string
+          description: Отображаемое имя (необязательно при регистрации)
+      required: [phone, code, password]
+
+    LoginRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          example: "+79991234567"
+        password:
+          type: string
+          format: password
+      required: [phone, password]
+
+    PasswordResetRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+        code:
+          type: string
+          description: Код из SMS с purpose=password_reset
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+      required: [phone, code, new_password]
+
+    PasswordChangeRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+      required: [current_password, new_password]
+
+    TokenResponse:
+      type: object
+      properties:
+        access_token:
+          type: string
+        refresh_token:
+          type: string
+        expires_in:
+          type: integer
+        user:
+          $ref: "#/components/schemas/UserBrief"
+      required: [access_token, refresh_token, expires_in, user]
+
+    RefreshRequest:
+      type: object
+      properties:
+        refresh_token:
+          type: string
+      required: [refresh_token]
+
+    UserBrief:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        is_profile_complete:
+          type: boolean
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        phone:
+          type: string
+        name:
+          type: string
+        avatar_url:
+          type: string
+          nullable: true
+        bio:
+          type: string
+          nullable: true
+        rating:
+          type: number
+          format: float
+        reviews_count:
+          type: integer
+        location:
+          $ref: "#/components/schemas/Location"
+        wallet:
+          $ref: "#/components/schemas/Wallet"
+        status:
+          type: string
+          enum: [active, blocked]
+        created_at:
+          type: string
+          format: date-time
+
+    PublicUser:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+        avatar_url:
+          type: string
+          nullable: true
+        rating:
+          type: number
+          format: float
+        reviews_count:
+          type: integer
+        distance_m:
+          type: integer
+          nullable: true
+
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+        avatar_url:
+          type: string
+        bio:
+          type: string
+
+    Location:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: float
+        lon:
+          type: number
+          format: float
+        address_text:
+          type: string
+      required: [lat, lon]
+
+    LocationUpdate:
+      type: object
+      properties:
+        lat:
+          type: number
+          format: float
+        lon:
+          type: number
+          format: float
+        address_text:
+          type: string
+      required: [lat, lon]
+
+    Category:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+          nullable: true
+        icon_url:
+          type: string
+          nullable: true
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+
+    CategoryCreate:
+      type: object
+      properties:
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: string
+        icon_url:
+          type: string
+        is_active:
+          type: boolean
+        sort_order:
+          type: integer
+      required: [name, slug]
+
+    DealType:
+      type: string
+      description: Формат сделки (UC-6)
+      enum: [free, barter, money]
+
+    ItemStatus:
+      type: string
+      enum: [available, booked, rented, hidden]
+
+    Item:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        owner_id:
+          $ref: "#/components/schemas/UUID"
+        category_id:
+          $ref: "#/components/schemas/UUID"
+        title:
+          type: string
+        description:
+          type: string
+        deposit_amount:
+          type: number
+          format: decimal
+        deal_type:
+          $ref: "#/components/schemas/DealType"
+        price_per_day:
+          type: number
+          format: decimal
+          nullable: true
+          description: Заполняется только при deal_type = money
+        status:
+          $ref: "#/components/schemas/ItemStatus"
+        main_photo_url:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ItemDetails:
+      allOf:
+        - $ref: "#/components/schemas/Item"
+        - type: object
+          properties:
+            owner:
+              $ref: "#/components/schemas/PublicUser"
+            category:
+              $ref: "#/components/schemas/Category"
+            photos:
+              type: array
+              items:
+                $ref: "#/components/schemas/Photo"
+            distance_m:
+              type: integer
+              nullable: true
+
+    ItemCreate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        category_id:
+          $ref: "#/components/schemas/UUID"
+        deposit_amount:
+          type: number
+          format: decimal
+          minimum: 0
+        deal_type:
+          $ref: "#/components/schemas/DealType"
+        price_per_day:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Обязательно при deal_type = money
+        photo_ids:
+          type: array
+          items:
+            $ref: "#/components/schemas/UUID"
+          description: ID изображений, полученные из POST /uploads
+      required: [title, description, category_id, deposit_amount, deal_type]
+
+    ItemUpdate:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+        deposit_amount:
+          type: number
+          format: decimal
+        deal_type:
+          $ref: "#/components/schemas/DealType"
+        price_per_day:
+          type: number
+          format: decimal
+
+    Photo:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        url:
+          type: string
+        is_main:
+          type: boolean
+        sort_order:
+          type: integer
+
+    PhotoUpdate:
+      type: object
+      properties:
+        is_main:
+          type: boolean
+        sort_order:
+          type: integer
+
+    Media:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        url:
+          type: string
+        width:
+          type: integer
+        height:
+          type: integer
+      required: [id, url]
+
+    GeoPlace:
+      type: object
+      properties:
+        address:
+          type: string
+        lat:
+          type: number
+          format: float
+        lon:
+          type: number
+          format: float
+        city:
+          type: string
+          nullable: true
+      required: [address, lat, lon]
+
+    CatalogResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            type: object
+            allOf:
+              - $ref: "#/components/schemas/Item"
+              - type: object
+                properties:
+                  owner:
+                    $ref: "#/components/schemas/PublicUser"
+                  distance_m:
+                    type: integer
+                  is_local:
+                    type: boolean
+        next_cursor:
+          type: string
+          nullable: true
+        meta:
+          type: object
+          properties:
+            mode:
+              type: string
+              enum: [local, city]
+            total_in_radius:
+              type: integer
+
+    AvailabilityResponse:
+      type: object
+      properties:
+        is_available:
+          type: boolean
+        unavailable_reason:
+          type: string
+          nullable: true
+          enum: [booked, rented, hidden]
+        next_available_from:
+          type: string
+          format: date-time
+          nullable: true
+        intervals:
+          type: array
+          description: Занятые интервалы в запрошенном периоде
+          items:
+            $ref: "#/components/schemas/UnavailableInterval"
+
+    UnavailableInterval:
+      type: object
+      properties:
+        start:
+          type: string
+          format: date-time
+        end:
+          type: string
+          format: date-time
+      required: [start, end]
+
+    BookingStatus:
+      type: string
+      enum: [pending, approved, rejected, rented, returned, disputed, cancelled]
+
+    Booking:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        item_id:
+          $ref: "#/components/schemas/UUID"
+        renter_id:
+          $ref: "#/components/schemas/UUID"
+        owner_id:
+          $ref: "#/components/schemas/UUID"
+        status:
+          $ref: "#/components/schemas/BookingStatus"
+        deposit_held_amount:
+          type: number
+          format: decimal
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+
+    BookingDetails:
+      allOf:
+        - $ref: "#/components/schemas/Booking"
+        - type: object
+          properties:
+            item:
+              $ref: "#/components/schemas/ItemDetails"
+            renter:
+              $ref: "#/components/schemas/PublicUser"
+            owner:
+              $ref: "#/components/schemas/PublicUser"
+            reviews:
+              type: array
+              items:
+                $ref: "#/components/schemas/Review"
+
+    BookingCreate:
+      type: object
+      properties:
+        item_id:
+          $ref: "#/components/schemas/UUID"
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+      required: [item_id, start_date, end_date]
+
+    BookingIssueCreate:
+      type: object
+      description: |
+        Владелец сообщает о проблеме (UC-5). Тип `overdue` покрывает
+        просрочку возврата, `damage` — порчу вещи.
+      properties:
+        issue_type:
+          type: string
+          enum: [damage, overdue, other]
+        reason:
+          type: string
+        evidence_photo_ids:
+          type: array
+          items:
+            $ref: "#/components/schemas/UUID"
+      required: [issue_type, reason]
+
+    BookingStatusEvent:
+      type: object
+      properties:
+        status:
+          $ref: "#/components/schemas/BookingStatus"
+        actor_id:
+          $ref: "#/components/schemas/UUID"
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+      required: [status, created_at]
+
+    BookingHistoryResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/BookingStatusEvent"
+        next_cursor:
+          type: string
+          nullable: true
+
+    Message:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        sender_id:
+          $ref: "#/components/schemas/UUID"
+        content:
+          type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    MessageCreate:
+      type: object
+      properties:
+        content:
+          type: string
+          maxLength: 2000
+      required: [content]
+
+    ItemQuestion:
+      type: object
+      description: Вопрос по объявлению до бронирования (UC-3, «Задать вопрос»)
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        item_id:
+          $ref: "#/components/schemas/UUID"
+        asker:
+          $ref: "#/components/schemas/PublicUser"
+        question:
+          type: string
+        answer:
+          type: string
+          nullable: true
+        answered_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ItemQuestionCreate:
+      type: object
+      properties:
+        question:
+          type: string
+          maxLength: 1000
+      required: [question]
+
+    ItemQuestionAnswer:
+      type: object
+      properties:
+        answer:
+          type: string
+          maxLength: 1000
+      required: [answer]
+
+    ItemQuestionListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ItemQuestion"
+        next_cursor:
+          type: string
+          nullable: true
+
+    Review:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        booking_id:
+          $ref: "#/components/schemas/UUID"
+        reviewer_id:
+          $ref: "#/components/schemas/UUID"
+        reviewee_id:
+          $ref: "#/components/schemas/UUID"
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          nullable: true
+        is_visible:
+          type: boolean
+          description: Видна ли оценка публично (после взаимной оценки)
+        created_at:
+          type: string
+          format: date-time
+
+    ReviewCreate:
+      type: object
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+          maxLength: 500
+      required: [rating]
+
+    PendingReview:
+      type: object
+      properties:
+        booking_id:
+          $ref: "#/components/schemas/UUID"
+        item:
+          $ref: "#/components/schemas/Item"
+        counterparty:
+          $ref: "#/components/schemas/PublicUser"
+        deadline:
+          type: string
+          format: date-time
+          nullable: true
+          description: После дедлайна оценка пропускается
+
+    PendingReviewListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/PendingReview"
+        next_cursor:
+          type: string
+          nullable: true
+
+    Wallet:
+      type: object
+      properties:
+        total:
+          type: number
+          format: decimal
+        held:
+          type: number
+          format: decimal
+        available:
+          type: number
+          format: decimal
+
+    Transaction:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        type:
+          type: string
+          enum: [deposit, withdrawal, hold, release, charge]
+        amount:
+          type: number
+          format: decimal
+        booking_id:
+          $ref: "#/components/schemas/UUID"
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    TransactionListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        next_cursor:
+          type: string
+          nullable: true
+
+    Notification:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        type:
+          type: string
+          enum:
+            [
+              new_booking,
+              booking_approved,
+              booking_rejected,
+              booking_cancelled,
+              message,
+              return_reminder,
+              dispute_update,
+              review_reminder,
+              ban,
+            ]
+        message:
+          type: string
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    NotificationSettings:
+      type: object
+      properties:
+        email_enabled:
+          type: boolean
+        push_enabled:
+          type: boolean
+        types:
+          type: object
+          additionalProperties:
+            type: boolean
+
+    PushSubscription:
+      type: object
+      description: Браузерная push-подписка (Web Push)
+      properties:
+        endpoint:
+          type: string
+        keys:
+          type: object
+          properties:
+            p256dh:
+              type: string
+            auth:
+              type: string
+          required: [p256dh, auth]
+      required: [endpoint, keys]
+
+    Report:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        target_type:
+          type: string
+          enum: [item, message, user]
+        target_id:
+          $ref: "#/components/schemas/UUID"
+        reporter_id:
+          $ref: "#/components/schemas/UUID"
+        reason:
+          type: string
+        status:
+          type: string
+          enum: [pending, resolved, dismissed]
+        resolution:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    ReportCreate:
+      type: object
+      properties:
+        target_type:
+          type: string
+          enum: [item, message, user]
+        target_id:
+          $ref: "#/components/schemas/UUID"
+        reason:
+          type: string
+      required: [target_type, target_id, reason]
+
+    ReportResolveRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [hide_item, delete_message, dismiss]
+        comment:
+          type: string
+        ban_user:
+          type: boolean
+          default: false
+          description: Заблокировать нарушителя при повторных нарушениях (UC-10)
+      required: [action, comment]
+
+    DisputeStatus:
+      type: string
+      enum: [pending, resolved, dismissed]
+
+    Dispute:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        booking_id:
+          $ref: "#/components/schemas/UUID"
+        status:
+          $ref: "#/components/schemas/DisputeStatus"
+        reason:
+          type: string
+        resolution:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    DisputeDetails:
+      allOf:
+        - $ref: "#/components/schemas/Dispute"
+        - type: object
+          properties:
+            booking:
+              $ref: "#/components/schemas/BookingDetails"
+            chat_messages:
+              type: array
+              items:
+                $ref: "#/components/schemas/Message"
+
+    DisputeResolution:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: [refund, charge, dismiss]
+        comment:
+          type: string
+        ban_user:
+          type: boolean
+          default: false
+      required: [action, comment]
+
+    # --- Admin views ---
+    AdminUser:
+      type: object
+      properties:
+        id:
+          $ref: "#/components/schemas/UUID"
+        phone:
+          type: string
+        name:
+          type: string
+        avatar_url:
+          type: string
+          nullable: true
+        status:
+          type: string
+          enum: [active, blocked]
+        rating:
+          type: number
+          format: float
+        reviews_count:
+          type: integer
+        items_count:
+          type: integer
+        bookings_count:
+          type: integer
+        reports_against:
+          type: integer
+        banned_until:
+          type: string
+          format: date-time
+          nullable: true
+        ban_reason:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    AdminUserDetails:
+      allOf:
+        - $ref: "#/components/schemas/AdminUser"
+        - type: object
+          properties:
+            location:
+              $ref: "#/components/schemas/Location"
+            last_activity_at:
+              type: string
+              format: date-time
+              nullable: true
+            recent_reports:
+              type: array
+              items:
+                $ref: "#/components/schemas/Report"
+
+    AdminUserListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUser"
+        next_cursor:
+          type: string
+          nullable: true
+
+    AdminItem:
+      allOf:
+        - $ref: "#/components/schemas/Item"
+        - type: object
+          properties:
+            owner:
+              $ref: "#/components/schemas/PublicUser"
+            reports_count:
+              type: integer
+
+    AdminItemListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminItem"
+        next_cursor:
+          type: string
+          nullable: true
+
+    # --- List responses ---
+    ItemListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Item"
+        next_cursor:
+          type: string
+          nullable: true
+
+    BookingListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+        next_cursor:
+          type: string
+          nullable: true
+
+    MessageListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Message"
+        next_cursor:
+          type: string
+          nullable: true
+
+    ReviewListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Review"
+        next_cursor:
+          type: string
+          nullable: true
+
+    NotificationListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Notification"
+        next_cursor:
+          type: string
+          nullable: true
+
+    HistoryResponse:
+      type: object
+      properties:
+        bookings:
+          type: array
+          items:
+            $ref: "#/components/schemas/Booking"
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Transaction"
+        next_cursor:
+          type: string
+          nullable: true
+
+  responses:
+    BadRequest:
+      description: Ошибка валидации
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Invalid input data
+    Unauthorized:
+      description: Неверный телефон/пароль или истёк токен
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Invalid credentials
+    Conflict:
+      description: Ресурс уже существует
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: ALREADY_EXISTS
+              message: Phone is already registered
+    NotFound:
+      description: Ресурс не найден
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: NOT_FOUND
+              message: Resource not found
+    TooManyRequests:
+      description: Превышен лимит запросов
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: RATE_LIMIT_EXCEEDED
+              message: Too many requests, try again later

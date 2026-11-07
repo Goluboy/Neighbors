@@ -13,7 +13,7 @@ erDiagram
 
     USER {
         id uuid PK
-        phone string UK "Только для верификации"
+        phone string UK "Логин; уникален, подтверждается кодом при регистрации"
         name string "Отображаемое имя"
         avatar_url string
         bio text
@@ -22,6 +22,11 @@ erDiagram
         address_text string "Текстовый адрес"
         role enum "user, moderator"
         status enum "active, blocked"
+        phone_verified_at timestamp "Когда номер подтверждён кодом (UC-1)"
+        password_hash string "Хэш пароля; вход по телефону и паролю"
+        password_updated_at timestamp "Когда пароль последний раз менялся"
+        failed_login_attempts int "Счётчик подряд неудачных входов (сброс при успехе)"
+        locked_until timestamp "Nullable; временная блокировка входа после N попыток"
         ban_reason text "Причина блокировки (nullable)"
         banned_until timestamp "До какого момента блокировка; null = навсегда"
         created_at timestamp
@@ -34,6 +39,28 @@ erDiagram
         total_balance decimal "Доступный баланс"
         held_balance decimal "Замороженный залог"
         updated_at timestamp
+    }
+
+    PHONE_VERIFICATION {
+        id uuid PK
+        phone string "Номер, на который отправлен SMS-код (не FK: аккаунта может ещё не быть)"
+        purpose enum "registration, password_reset — для чего выдан код"
+        code_hash string "Хэш OTP; открытый код не хранится"
+        attempts int "Счётчик неверных вводов"
+        expires_at timestamp "TTL кода (SendCodeResponse.code_ttl_seconds)"
+        consumed_at timestamp "Nullable; момент успешного подтверждения"
+        created_at timestamp "Используется для лимита повторной отправки"
+    }
+
+    REFRESH_TOKEN {
+        id uuid PK
+        user_id uuid FK "Ссылка на USER"
+        token_hash string UK "Хэш refresh-токена; сам токен не хранится"
+        expires_at timestamp
+        revoked_at timestamp "Nullable; logout или ротация"
+        user_agent string "Nullable"
+        ip_address string "Nullable"
+        created_at timestamp
     }
 
     ITEM {
@@ -171,6 +198,7 @@ erDiagram
     %% Отношения
     CATEGORY ||--o{ ITEM : "классифицирует"
     USER ||--o| WALLET : "имеет"
+    USER ||--o{ REFRESH_TOKEN : "имеет сессии"
     USER ||--o{ ITEM : "владеет"
     USER ||--o{ BOOKING : "создаёт как арендатор"
     ITEM ||--o{ BOOKING : "участвует в"

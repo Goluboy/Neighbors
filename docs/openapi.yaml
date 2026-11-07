@@ -17,7 +17,7 @@ servers:
 
 tags:
   - name: auth
-    description: Регистрация и вход по номеру телефона
+    description: Регистрация с подтверждением телефона и вход по паролю
   - name: users
     description: Профиль пользователя
   - name: categories
@@ -53,7 +53,7 @@ paths:
   /auth/phone/send-code:
     post:
       tags: [auth]
-      summary: Отправить SMS-код
+      summary: Отправить SMS-код (регистрация / сброс пароля)
       security: []
       requestBody:
         required: true
@@ -71,17 +71,40 @@ paths:
         "429":
           $ref: "#/components/responses/TooManyRequests"
 
-  /auth/phone/verify:
+  /auth/register:
     post:
       tags: [auth]
-      summary: Подтвердить код и получить токены
+      summary: Регистрация по коду из SMS с заданием пароля
       security: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/VerifyCodeRequest"
+              $ref: "#/components/schemas/RegisterRequest"
+      responses:
+        "201":
+          description: Аккаунт создан, токены выданы
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TokenResponse"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "409":
+          $ref: "#/components/responses/Conflict"
+
+  /auth/login:
+    post:
+      tags: [auth]
+      summary: Вход по номеру телефона и паролю
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
       responses:
         "200":
           description: Успешная авторизация
@@ -89,8 +112,10 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TokenResponse"
-        "400":
-          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "429":
+          $ref: "#/components/responses/TooManyRequests"
 
   /auth/refresh:
     post:
@@ -110,6 +135,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/TokenResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   /auth/logout:
     post:
@@ -118,6 +145,43 @@ paths:
       responses:
         "204":
           description: Успешный выход
+
+  /auth/password/reset:
+    post:
+      tags: [auth]
+      summary: Восстановить пароль по коду из SMS
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordResetRequest"
+      responses:
+        "204":
+          description: Пароль изменён
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "404":
+          $ref: "#/components/responses/NotFound"
+
+  /auth/password/change:
+    post:
+      tags: [auth]
+      summary: Сменить пароль (авторизованный пользователь)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PasswordChangeRequest"
+      responses:
+        "204":
+          description: Пароль изменён
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
 
   # ==================== USERS ====================
   /users/me:
@@ -1698,6 +1762,11 @@ components:
         phone:
           type: string
           example: "+79991234567"
+        purpose:
+          type: string
+          description: Для чего запрошен код
+          enum: [registration, password_reset]
+          default: registration
       required: [phone]
 
     SendCodeResponse:
@@ -1708,14 +1777,63 @@ components:
         retry_after_seconds:
           type: integer
 
-    VerifyCodeRequest:
+    RegisterRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          example: "+79991234567"
+        code:
+          type: string
+          description: Код из SMS
+        password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+        name:
+          type: string
+          description: Отображаемое имя (необязательно при регистрации)
+      required: [phone, code, password]
+
+    LoginRequest:
+      type: object
+      properties:
+        phone:
+          type: string
+          example: "+79991234567"
+        password:
+          type: string
+          format: password
+      required: [phone, password]
+
+    PasswordResetRequest:
       type: object
       properties:
         phone:
           type: string
         code:
           type: string
-      required: [phone, code]
+          description: Код из SMS с purpose=password_reset
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+      required: [phone, code, new_password]
+
+    PasswordChangeRequest:
+      type: object
+      properties:
+        current_password:
+          type: string
+          format: password
+        new_password:
+          type: string
+          format: password
+          minLength: 8
+          maxLength: 128
+      required: [current_password, new_password]
 
     TokenResponse:
       type: object
@@ -2678,6 +2796,26 @@ components:
             error:
               code: VALIDATION_ERROR
               message: Invalid input data
+    Unauthorized:
+      description: Неверный телефон/пароль или истёк токен
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Invalid credentials
+    Conflict:
+      description: Ресурс уже существует
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Error"
+          example:
+            error:
+              code: ALREADY_EXISTS
+              message: Phone is already registered
     NotFound:
       description: Ресурс не найден
       content:

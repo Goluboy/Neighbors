@@ -1,0 +1,193 @@
+erDiagram
+    CATEGORY {
+        id uuid PK
+        name string "Название категории (Ремонт, Уборка...)"
+        slug string UK "Идентификатор для URL и кода"
+        description text "Описание для витрины"
+        icon_url string "Иконка категории"
+        is_active boolean "Видна ли в рубрикаторе"
+        sort_order int "Порядок отображения"
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    USER {
+        id uuid PK
+        phone string UK "Только для верификации"
+        name string "Отображаемое имя"
+        avatar_url string
+        bio text
+        latitude decimal "Точка проживания (широта)"
+        longitude decimal "Точка проживания (долгота)"
+        address_text string "Текстовый адрес"
+        role enum "user, moderator"
+        status enum "active, blocked"
+        ban_reason text "Причина блокировки (nullable)"
+        banned_until timestamp "До какого момента блокировка; null = навсегда"
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    WALLET {
+        id uuid PK
+        user_id uuid FK
+        total_balance decimal "Доступный баланс"
+        held_balance decimal "Замороженный залог"
+        updated_at timestamp
+    }
+
+    ITEM {
+        id uuid PK
+        owner_id uuid FK "Ссылка на USER"
+        category_id uuid FK "Ссылка на CATEGORY"
+        title string
+        description text
+        deposit_amount decimal "Сумма залога (может быть 0)"
+        deal_type enum "free, barter, money — формат сделки (UC-6)"
+        price_per_day decimal "Цена аренды в сутки; nullable, если deal_type != money"
+        status enum "available, booked, rented, hidden"
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    ITEM_PHOTO {
+        id uuid PK
+        item_id uuid FK
+        media_id uuid FK "Nullable, ссылка на загруженный MEDIA"
+        url string
+        is_main boolean
+        sort_order int "Порядок отображения в галерее"
+    }
+
+    BOOKING {
+        id uuid PK
+        item_id uuid FK
+        renter_id uuid FK "Ссылка на USER"
+        status enum "pending, approved, rejected, rented, returned, disputed, cancelled"
+        deposit_held_amount decimal "Сколько заморожено по сделке"
+        start_date timestamp "Планируемое/фактическое начало"
+        end_date timestamp "Планируемое/фактическое окончание"
+        created_at timestamp
+        updated_at timestamp
+    }
+
+    MESSAGE {
+        id uuid PK
+        booking_id uuid FK "Чат привязан к сделке"
+        sender_id uuid FK "Ссылка на USER"
+        content text
+        is_read boolean
+        created_at timestamp
+    }
+
+    REVIEW {
+        id uuid PK
+        booking_id uuid FK "Оценка по завершённой сделке"
+        reviewer_id uuid FK "Кто оценивает"
+        reviewee_id uuid FK "Кого оценивают"
+        rating int "1-5 звёзд"
+        comment text
+        is_visible boolean "Публикуется после встречной оценки или истечения срока"
+        created_at timestamp
+    }
+
+    WALLET_TRANSACTION {
+        id uuid PK
+        user_id uuid FK
+        booking_id uuid FK "Nullable, если вне сделки"
+        type enum "deposit, withdrawal, hold, release, charge"
+        amount decimal
+        created_at timestamp
+    }
+
+    DISPUTE {
+        id uuid PK
+        booking_id uuid FK "Nullable, если жалоба на контент"
+        item_id uuid FK "Nullable, если жалоба на объявление"
+        message_id uuid FK "Nullable, если жалоба на сообщение"
+        reporter_id uuid FK "Кто пожаловался"
+        reported_user_id uuid FK "На кого пожаловались (Nullable)"
+        reason text
+        issue_type enum "damage, overdue, other — тип проблемы по сделке (nullable)"
+        status enum "pending, resolved, dismissed"
+        resolution text "Решение модератора"
+        moderator_id uuid FK "Ссылка на USER-модератора"
+        created_at timestamp
+        resolved_at timestamp
+    }
+
+    NOTIFICATION {
+        id uuid PK
+        user_id uuid FK
+        type enum "new_booking, booking_approved, booking_rejected, booking_cancelled, message, return_reminder, dispute_update, review_reminder, ban"
+        message text
+        is_read boolean
+        created_at timestamp
+    }
+
+    MEDIA {
+        id uuid PK
+        uploaded_by uuid FK "Ссылка на USER"
+        url string
+        width int
+        height int
+        created_at timestamp
+    }
+
+    ITEM_QUESTION {
+        id uuid PK
+        item_id uuid FK
+        asker_id uuid FK "Ссылка на USER"
+        question text
+        answer text "Nullable"
+        answered_at timestamp "Nullable"
+        created_at timestamp
+    }
+
+    BOOKING_STATUS_EVENT {
+        id uuid PK
+        booking_id uuid FK
+        status enum "Тот же enum, что у BOOKING"
+        actor_id uuid FK "Nullable, кто инициировал переход"
+        comment text "Nullable"
+        created_at timestamp
+    }
+
+    PUSH_SUBSCRIPTION {
+        id uuid PK
+        user_id uuid FK
+        endpoint string UK "Endpoint браузерной подписки"
+        p256dh string
+        auth string
+        created_at timestamp
+    }
+
+    DISPUTE_EVIDENCE {
+        id uuid PK
+        dispute_id uuid FK
+        media_id uuid FK
+    }
+
+    %% Отношения
+    CATEGORY ||--o{ ITEM : "классифицирует"
+    USER ||--o| WALLET : "имеет"
+    USER ||--o{ ITEM : "владеет"
+    USER ||--o{ BOOKING : "создаёт как арендатор"
+    ITEM ||--o{ BOOKING : "участвует в"
+    ITEM ||--o{ ITEM_PHOTO : "содержит"
+    BOOKING ||--o{ MESSAGE : "включает чат"
+    BOOKING ||--o{ REVIEW : "генерирует оценки (до 2-х)"
+    USER ||--o{ REVIEW : "пишет/получает"
+    USER ||--o{ WALLET_TRANSACTION : "имеет историю"
+    BOOKING ||--o{ WALLET_TRANSACTION : "инициирует"
+    BOOKING ||--o| DISPUTE : "может быть предметом спора"
+    USER ||--o{ DISPUTE : "создаёт"
+    USER ||--o{ NOTIFICATION : "получает"
+    USER ||--o{ MEDIA : "загружает"
+    ITEM_PHOTO }o--o| MEDIA : "использует"
+    ITEM ||--o{ ITEM_QUESTION : "имеет вопросы"
+    USER ||--o{ ITEM_QUESTION : "задаёт"
+    BOOKING ||--o{ BOOKING_STATUS_EVENT : "имеет историю"
+    USER ||--o{ PUSH_SUBSCRIPTION : "имеет подписки"
+    DISPUTE ||--o{ DISPUTE_EVIDENCE : "содержит доказательства"
+    MEDIA ||--o{ DISPUTE_EVIDENCE : "используется как"

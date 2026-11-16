@@ -1,0 +1,33 @@
+# Пути внутри файла считаются от директории этого файла (backend/), поэтому
+# compose работает и из корня проекта: docker compose -f backend/docker-compose.yml up -d
+services:
+  db:
+    image: postgis/postgis:16-3.4 # PostgreSQL + PostGIS для гео-выдачи
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: neighbors
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+
+  redis:
+    image: redis:7-alpine # SMS-коды, rate-limit, WS pub/sub
+    ports: ["6379:6379"]
+
+  seaweedfs:
+    image: chrislusf/seaweedfs:latest # S3-совместимое хранилище фото, S3 API на :8333
+    command: server -dir=/data -ip.bind=0.0.0.0 -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json
+    ports: ["8333:8333"]
+    volumes:
+      - seaweed:/data
+      - ./seaweedfs/s3.json:/etc/seaweedfs/s3.json:ro
+
+  api:
+    build: .
+    env_file: .env
+    depends_on: [db, redis, seaweedfs]
+    ports: ["8000:8000"]
+
+volumes:
+  pgdata:
+  seaweed:

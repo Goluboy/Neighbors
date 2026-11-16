@@ -1,0 +1,43 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v6.0.0
+    hooks:
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-merge-conflict
+      - id: check-toml
+      - id: check-yaml
+      - id: detect-private-key
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+
+  # ruff comes from the active environment, not a pinned pre-commit mirror:
+  # requirements-dev.txt is the only place its version lives.
+  - repo: local
+    hooks:
+      - id: ruff-check
+        name: ruff check --fix
+        entry: ruff check --force-exclude --fix
+        language: system
+        types_or: [python, pyi]
+        files: ^backend/
+
+      - id: ruff-format
+        name: ruff format
+        entry: ruff format --force-exclude
+        language: system
+        types_or: [python, pyi]
+        files: ^backend/
+
+      - id: layer-boundaries
+        name: layer boundaries (domain/services import no sqlalchemy, fastapi, pydantic)
+        entry: make --no-print-directory -C backend layers
+        language: system
+        files: ^backend/app/(domain|services)/
+        pass_filenames: false
+
+      - id: no-env-file
+        name: .env is local only
+        entry: "environment files are local; commit .env.example instead"
+        language: fail
+        files: (^|/)\.env$

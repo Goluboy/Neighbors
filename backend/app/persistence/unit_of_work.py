@@ -5,7 +5,6 @@
 
 from sqlalchemy.orm import Session
 
-from app.persistence import models as m
 from app.persistence.api.repositories.sqlalchemy_repositories import (
     SqlBookingRepository,
     SqlCategoryRepository,
@@ -43,21 +42,6 @@ class SqlAlchemyUnitOfWork:
 
     def close(self):
         self.session.close()
-
-    # convenience-фабрики для записи служебных сущностей внутри use-case
-    class _ModelAdder:
-        def __init__(self, session: Session, model):
-            self.session, self.model = session, model
-
-        def add(self, kwargs: dict):
-            entity = self.model(**kwargs)
-            self.session.add(entity)
-            self.session.flush()
-            return entity
-
-    @property
-    def tx_adder(self):  # совместимость: сервисы пишут через конкретные репозитории
-        return self._ModelAdder(self.session, m.WalletTransaction)
 
     def __enter__(self):
         return self

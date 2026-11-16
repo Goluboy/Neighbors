@@ -3,8 +3,8 @@
 from fastapi import APIRouter, Depends
 
 from app.api.deps import require_moderator
-from app.models import User
-from app.schemas import DisputeResolve
+from app.api.schemas import DisputeResolve
+from app.domain.identity import CurrentUser
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_moderator)])
 
@@ -22,7 +22,9 @@ def dispute_context(dispute_id: int):
 
 
 @router.post("/disputes/{dispute_id}/resolve")
-def resolve_dispute(dispute_id: int, data: DisputeResolve, mod: User = Depends(require_moderator)):
+def resolve_dispute(
+    dispute_id: int, data: DisputeResolve, mod: CurrentUser = Depends(require_moderator)
+):
     """refund (разморозка в пользу арендатора) | charge (списание владельцу) | dismiss.
     Опционально ban_user. Из 'disputed' заказ выходит только решением модератора."""
     raise NotImplementedError

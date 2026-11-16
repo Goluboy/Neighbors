@@ -20,3 +20,9 @@ def test_openapi_has_all_tags(client):
         "/api/v1/admin",
     ]:
         assert any(p.startswith(prefix) for p in paths), prefix
+
+
+def test_chat_websocket_route_registered():
+    from app.api.v1 import chat
+
+    assert "/ws/bookings/{booking_id}/chat" in {r.path for r in chat.router.routes}

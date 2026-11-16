@@ -35,7 +35,8 @@ class BaseSqlRepo:
     def get(self, entity_id: int):
         return self.db.get(self.model, entity_id)
 
-    def add(self, entity):
+    def add(self, values: dict):
+        entity = self.model(**values)
         self.db.add(entity)
         self.db.flush()
         return entity

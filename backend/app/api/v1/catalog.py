@@ -9,15 +9,18 @@
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import get_current_user
-from app.models import User
+from app.api.deps import get_catalog_service, get_current_user
+from app.api.schemas import ItemOut
+from app.domain.identity import CurrentUser
+from app.services.catalog_service import CatalogService
 
 router = APIRouter(prefix="/catalog", tags=["catalog"])
 
 
 @router.get("")
 def search_catalog(
-    user: User = Depends(get_current_user),
+    user: CurrentUser = Depends(get_current_user),
+    service: CatalogService = Depends(get_catalog_service),
     category_id: int | None = None,
     q: str | None = None,
     radius_km: float | None = None,
@@ -26,4 +29,18 @@ def search_catalog(
     cursor: str | None = None,
     limit: int = 20,
 ):
-    raise NotImplementedError  # TODO: PostGIS-задача ST_DWithin + курсорная пагинация
+    result = service.search(
+        user,
+        category_id=category_id,
+        q=q,
+        radius_km=radius_km,
+        mode=mode,
+        availability=availability,
+        cursor=cursor,
+        limit=limit,
+    )
+    items = [
+        ItemOut.model_validate(item).model_copy(update={"distance_m": distance})
+        for item, distance in result["items"]
+    ]
+    return {"items": items, "meta": result["meta"]}

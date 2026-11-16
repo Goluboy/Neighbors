@@ -1,5 +1,7 @@
 """Use-case сервис авторизации (UC-1): верификация только по номеру телефона."""
 
+from collections.abc import Callable
+
 from app.core.config import settings
 from app.core.exceptions import DomainError
 from app.core.security import create_access_token, create_refresh_token
@@ -9,7 +11,6 @@ from app.domain.ports.repositories import (
     UserRepository,
     WalletRepository,
 )
-from app.infrastructure.sms import generate_code
 
 
 class InvalidCodeError(DomainError):
@@ -32,20 +33,24 @@ class AuthService:
     def __init__(
         self,
         *,
+        uow,
         users: UserRepository,
         wallets: WalletRepository,
         sms: SmsSenderPort,
         codes: CodeStoragePort,
+        new_code: Callable[[], str],
     ):
+        self.uow = uow
         self.users = users
         self.wallets = wallets
         self.sms = sms
         self.codes = codes
+        self.new_code = new_code
 
     def send_code(self, phone: str) -> None:
         if not self.codes.can_resend(phone, self.SMS_COOLDOWN_SECONDS):
             raise ResendTooSoonError("Код уже отправлен, попробуйте позже")
-        code = generate_code(stub_mode=settings.SMS_PROVIDER == "stub")
+        code = self.new_code()
         self.codes.save(phone, code, settings.VERIFICATION_CODE_TTL_SECONDS)
         self.sms.send(phone, f"Ваш код подтверждения: {code}")
 
@@ -59,7 +64,7 @@ class AuthService:
         if is_new:
             user = self.users.add(dict(phone=phone))
             self.wallets.add(dict(user_id=user.id, total_balance=0, held_balance=0))
-            # TODO: self.uow.commit() — коммит переносится в UnitOfWork при подключении БД
+            self.uow.commit()
         assert user is not None
         return {
             "access_token": create_access_token(user.id),

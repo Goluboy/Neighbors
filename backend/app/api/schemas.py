@@ -1,4 +1,4 @@
-"""Pydantic-схемы запросов/ответов API (каркас)."""
+"""Pydantic-схемы запросов/ответов API."""
 
 from datetime import datetime
 from decimal import Decimal
@@ -99,6 +99,14 @@ class ItemOut(BaseModel):
     owner: UserPublic
     main_photo_url: str | None = None
     distance_m: int | None = None  # только в выдаче; адрес владельца не раскрывается
+
+
+class ItemUpdate(BaseModel):
+    title: str | None = Field(default=None, min_length=3, max_length=200)
+    description: str | None = None
+    category_id: int | None = None
+    deposit_amount: Decimal | None = None
+    format: str | None = None
 
 
 # ---------- Bookings (UC-3..5) ----------

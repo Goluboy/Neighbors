@@ -53,12 +53,13 @@ Dependency rule: `api` → `services` → `domain`. `persistence` and `infrastru
 - `app/domain` — rules, enums, stop-words, state machine, ports. Imports: stdlib plus
   `app.core.exceptions`.
 - `app/domain/ports` — ABC only. Need an external dependency? Define the port first.
-- `app/services` — use cases. Only `app.core` and `app.domain`. No SQLAlchemy, FastAPI, `app.models`,
-  `app.persistence`.
+- `app/services` — use cases. Only `app.core` and `app.domain`. No SQLAlchemy, FastAPI,
+  `app.persistence`, or `app.infrastructure`.
 - `app/persistence` — ORM models, repositories, UnitOfWork. The only layer with ORM.
 - `app/infrastructure` — Redis, S3 (SeaweedFS), SMS. Import heavy SDKs lazily.
 - `app/composition/container.py` — port assembly only. `lru_cache` means singleton.
-- `app/api` — HTTP, Pydantic schemas, dependencies. `HTTPException` only here.
+- `app/api` — HTTP, Pydantic schemas (`app/api/schemas.py`), dependencies, error handlers.
+  `HTTPException` only here; `DomainError` is mapped to a response by `app/api/error_handlers.py`.
 
 Layer check, from `backend/` — it is also a pre-commit hook and a CI step:
 
@@ -68,15 +69,13 @@ make layers
 
 Empty output means clean.
 
-## Two generations
+## One generation
 
-Clean layers: `domain`, `services`, `persistence`, `infrastructure`, `composition`.
-Scaffold: `app/models/models.py`, `app/schemas/schemas.py`, `app/api/v1/*`, `app/utils/s3.py`.
-New code goes to the clean layers; do not extend the scaffold.
+Only the clean layers exist: `domain`, `services`, `persistence`, `infrastructure`, `composition`,
+`api`. The old scaffold (`app/models`, `app/schemas`, `app/utils`) is gone; do not recreate it.
 
-`app/models` and `app/persistence/models` declare the same tables on the same `Base`. Never import
-both sets in one process: SQLAlchemy fails on duplicate table definitions. Alembic uses
-`app.models`.
+`app/persistence/models.py` is the only ORM model set. Alembic, tests, and repositories import it;
+nothing else should. New code goes to the clean layers.
 
 ## Invariants
 
@@ -126,9 +125,10 @@ CI (`.github/workflows/ci.yml`, workflow "Backend CI") runs the same checks plus
 - `BookingService(db)` — the constructor is keyword-only: `uow`, `bookings`, `items`, `wallets`,
   `notifications`, `event_bus`. Wire it through `app/api/deps.py` and the container.
 - `create_booking(user, ...)` — the service expects `renter_id: int`; pass `user.id`.
-- `repo.add(dict(...))` versus `repo.add(entity)`: `BaseSqlRepo.add` puts an object into the
-  session, a dict fails. Pick one contract and apply it to every repository.
-- `DomainError` without error handlers surfaces as 500, not 4xx.
+- `repo.add(values)` takes a dict of column values and returns the entity; never pass an ORM
+  object. `repo.delete(entity)` takes the object.
+- `DomainError` without a registered handler surfaces as 500; keep
+  `register_exception_handlers(app)` in `app/main.py`.
 - A missing `@router.websocket` decorator means the route does not exist at all, and startup stays
   green.
 - Enums redeclared outside `app.domain.enums`.

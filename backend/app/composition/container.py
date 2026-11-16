@@ -6,9 +6,16 @@ FastAPI-зависимости (app/api/deps.py) берут сервисы от�
 
 from functools import lru_cache
 
+from app.core.config import settings
 from app.domain.ports.repositories import CodeStoragePort, EventBusPort, SmsSenderPort
 from app.infrastructure.eventbus_redis import InMemoryEventBus
-from app.infrastructure.sms import ConsoleSmsSender, InMemoryCodeStorage
+from app.infrastructure.sms import ConsoleSmsSender, InMemoryCodeStorage, generate_code
+
+
+@lru_cache
+def get_code_factory():
+    stub_mode = settings.SMS_PROVIDER == "stub"
+    return lambda: generate_code(stub_mode=stub_mode)
 
 
 @lru_cache

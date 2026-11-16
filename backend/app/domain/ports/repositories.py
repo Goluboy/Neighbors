@@ -17,7 +17,8 @@ class Repository(ABC, Generic[T]):
     def get(self, entity_id: int) -> T | None: ...
 
     @abstractmethod
-    def add(self, entity: T) -> T: ...
+    def add(self, values: dict[str, Any]) -> T:
+        """Создаёт сущность из полей и возвращает её (id доступен после вызова)."""
 
     @abstractmethod
     def delete(self, entity: T) -> None: ...

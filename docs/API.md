@@ -18,4 +18,4 @@
 | admin | GET /admin/disputes[/{id}], POST resolve; /admin/reports[/{id}/resolve]; /admin/users/{id}/ban/unban; /admin/categories | UC-9, UC-10 |
 
 Полные схемы запросов/ответов — в Swagger UI (`/docs`) после запуска;
-Pydantic-модели: `app/schemas/schemas.py`.
+Pydantic-модели: `app/api/schemas.py`.

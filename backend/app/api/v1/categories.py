@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 
-from app.schemas import CategoryOut
+from app.api.schemas import CategoryOut
 
 router = APIRouter(prefix="/categories", tags=["categories"])
 

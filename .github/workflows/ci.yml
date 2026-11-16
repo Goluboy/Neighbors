@@ -42,8 +42,9 @@ jobs:
       - name: Prepare env file
         run: cp .env.example .env
 
-      - name: Lint (ruff)
-        run: make lint
+      - name: Pre-commit (ruff, formatting, layer boundaries, hygiene)
+        working-directory: ${{ github.workspace }}
+        run: pre-commit run --all-files --show-diff-on-failure
 
       - name: Type-check (mypy, clean layers)
         run: make typecheck

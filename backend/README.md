@@ -68,6 +68,7 @@ alembic revision --autogenerate -m "schema"
 alembic upgrade head
 ```
 
-`Makefile` содержит те же команды, плюс `make lint`, `make typecheck` и `make layers`.
+`Makefile` содержит те же команды, плюс `make lint`, `make format`,
+`make typecheck`, `make layers` и `make hooks` (ставит pre-commit-хуки).
 Их же запускает CI (`.github/workflows/ci.yml`) — вместе с `make test` и
 `docker compose -f backend/docker-compose.yml config`.

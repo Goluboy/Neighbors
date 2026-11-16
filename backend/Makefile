@@ -13,11 +13,17 @@ test:
 lint:
 	ruff check app tests
 
+format:
+	ruff format app tests
+
 typecheck:
 	mypy
 
 layers:
 	@! grep -rn "sqlalchemy\|fastapi\|pydantic" app/domain app/services
+
+hooks:
+	python3 -m pre_commit install
 
 up:
 	docker compose up -d

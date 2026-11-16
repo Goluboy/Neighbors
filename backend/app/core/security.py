@@ -1,4 +1,5 @@
 """JWT-утилиты и заглушка безопасности для учебной версии."""
+
 from datetime import datetime, timedelta, timezone
 from uuid import UUID, uuid4
 

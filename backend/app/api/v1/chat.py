@@ -1,4 +1,5 @@
 """Chat endpoints + WebSocket (UC-4). Чат привязан к бронированию — защита от спама."""
+
 from fastapi import APIRouter, Depends, WebSocket
 
 from app.api.deps import get_current_user
@@ -9,8 +10,12 @@ router = APIRouter(tags=["chat"])
 
 
 @router.get("/bookings/{booking_id}/messages", response_model=list[MessageOut])
-def list_messages(booking_id: int, cursor: str | None = None, limit: int = 50,
-                  user: User = Depends(get_current_user)):
+def list_messages(
+    booking_id: int,
+    cursor: str | None = None,
+    limit: int = 50,
+    user: User = Depends(get_current_user),
+):
     raise NotImplementedError
 
 

@@ -1,4 +1,5 @@
 """Categories endpoints (публичные, кэшируемые)."""
+
 from fastapi import APIRouter
 
 from app.schemas import CategoryOut

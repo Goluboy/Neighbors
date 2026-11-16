@@ -1,4 +1,5 @@
 """Items endpoints (UC-6): публикация и управление объявлениями."""
+
 from fastapi import APIRouter, Depends
 
 from app.api.deps import get_current_user

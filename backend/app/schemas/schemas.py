@@ -1,4 +1,5 @@
 """Pydantic-схемы запросов/ответов API (каркас)."""
+
 from datetime import datetime
 from decimal import Decimal
 

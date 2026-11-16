@@ -1,4 +1,5 @@
 """Use-case сервис объявлений (UC-6). Application layer, без ORM и HTTP."""
+
 from decimal import Decimal
 
 from app.core.exceptions import (
@@ -13,27 +14,48 @@ from app.domain.prohibited import contains_prohibited
 
 
 class ItemService:
-    def __init__(self, *, uow, items: ItemRepository, bookings: BookingRepository,
-                 categories: CategoryRepository):
+    def __init__(
+        self,
+        *,
+        uow,
+        items: ItemRepository,
+        bookings: BookingRepository,
+        categories: CategoryRepository,
+    ):
         self.uow = uow
         self.items = items
         self.bookings = bookings
         self.categories = categories
 
     # ---------- UC-6: публикация ----------
-    def create_item(self, owner_id: int, *, title: str, description: str | None,
-                    category_id: int, deposit_amount: Decimal, rental_format: str):
+    def create_item(
+        self,
+        owner_id: int,
+        *,
+        title: str,
+        description: str | None,
+        category_id: int,
+        deposit_amount: Decimal,
+        rental_format: str,
+    ):
         if contains_prohibited(title) or contains_prohibited(description):
             raise ProhibitedItemError(
-                "Размещаются только физические предметы; услуги, еда и медикаменты запрещены")
+                "Размещаются только физические предметы; услуги, еда и медикаменты запрещены"
+            )
         if self.categories.get(category_id) is None:
             raise NotFoundError("Категория не найдена")
 
-        item = self.items.add(dict(
-            owner_id=owner_id, category_id=category_id, title=title,
-            description=description, deposit_amount=deposit_amount,
-            format=rental_format, status=ItemStatus.available,
-        ))
+        item = self.items.add(
+            dict(
+                owner_id=owner_id,
+                category_id=category_id,
+                title=title,
+                description=description,
+                deposit_amount=deposit_amount,
+                format=rental_format,
+                status=ItemStatus.available,
+            )
+        )
         self.uow.commit()
         return item
 
@@ -65,8 +87,11 @@ class ItemService:
 
     def delete(self, item_id: int, user_id: int) -> None:
         item = self._get_owned(item_id, user_id)
-        active = [b for b in item.bookings
-                  if b.status.value in ("pending", "approved", "rented", "disputed")]
+        active = [
+            b
+            for b in item.bookings
+            if b.status.value in ("pending", "approved", "rented", "disputed")
+        ]
         if active:
             raise ConflictError("Есть активные брони — удаление запрещено")
         # TODO: удалить объекты фото из S3 через FileStoragePort.delete(storage_key)

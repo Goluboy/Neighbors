@@ -1,4 +1,5 @@
 """Use-case сервис авторизации (UC-1): верификация только по номеру телефона."""
+
 from app.core.config import settings
 from app.core.exceptions import DomainError
 from app.core.security import create_access_token, create_refresh_token
@@ -13,12 +14,14 @@ from app.infrastructure.sms import generate_code
 
 class InvalidCodeError(DomainError):
     """Неверный или истёкший код подтверждения."""
+
     code = "INVALID_CODE"
     http_status = 400
 
 
 class ResendTooSoonError(DomainError):
     """Повторная отправка ограничена таймаутом (бизнес-правило UC-1)."""
+
     code = "RESEND_TOO_SOON"
     http_status = 429
 
@@ -26,8 +29,14 @@ class ResendTooSoonError(DomainError):
 class AuthService:
     SMS_COOLDOWN_SECONDS = 60
 
-    def __init__(self, *, users: UserRepository, wallets: WalletRepository,
-                 sms: SmsSenderPort, codes: CodeStoragePort):
+    def __init__(
+        self,
+        *,
+        users: UserRepository,
+        wallets: WalletRepository,
+        sms: SmsSenderPort,
+        codes: CodeStoragePort,
+    ):
         self.users = users
         self.wallets = wallets
         self.sms = sms

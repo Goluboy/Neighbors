@@ -1,4 +1,5 @@
 """Reports endpoints (UC-10). Автор жалобы скрыт от целевого пользователя."""
+
 from fastapi import APIRouter, Depends
 
 from app.api.deps import get_current_user

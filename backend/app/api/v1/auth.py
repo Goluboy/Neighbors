@@ -1,4 +1,5 @@
 """Auth endpoints (UC-1): верификация только по номеру телефона."""
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 

@@ -3,6 +3,7 @@
 Чистая архитектура: services-слой зависит только от этих ABC.
 Реализации — в app/persistence (SQLAlchemy) и app/infrastructure (Redis, S3, SMS).
 """
+
 from abc import ABC, abstractmethod
 from typing import Any, Generic, Iterable, TypeVar
 
@@ -47,9 +48,19 @@ class ItemRepository(Repository, ABC):
     def list_by_owner(self, owner_id: int, status: str | None = None) -> Iterable: ...
 
     @abstractmethod
-    def search(self, *, lat: float | None, lon: float | None, radius_km: float,
-               mode: str, category_id: int | None, q: str | None,
-               availability: str | None, cursor: str | None, limit: int) -> tuple[list, str | None]:
+    def search(
+        self,
+        *,
+        lat: float | None,
+        lon: float | None,
+        radius_km: float,
+        mode: str,
+        category_id: int | None,
+        q: str | None,
+        availability: str | None,
+        cursor: str | None,
+        limit: int,
+    ) -> tuple[list, str | None]:
         """Витрина UC-3: local/city выдача, курсорная пагинация.
         Возвращает (rows, next_cursor). rows — кортежи (item, distance_m)."""
 
@@ -72,7 +83,9 @@ class CategoryRepository(Repository, ABC):
 
 class MessageRepository(Repository, ABC):
     @abstractmethod
-    def list_by_booking(self, booking_id: int, cursor: str | None, limit: int) -> tuple[list, str | None]: ...
+    def list_by_booking(
+        self, booking_id: int, cursor: str | None, limit: int
+    ) -> tuple[list, str | None]: ...
 
     @abstractmethod
     def mark_read_until(self, booking_id: int, user_id: int, until_message_id: int) -> int: ...
@@ -86,7 +99,9 @@ class ReviewRepository(Repository, ABC):
     def list_for_booking(self, booking_id: int) -> Iterable: ...
 
     @abstractmethod
-    def list_visible_for_user(self, user_id: int, cursor: str | None, limit: int) -> tuple[list, str | None]: ...
+    def list_visible_for_user(
+        self, user_id: int, cursor: str | None, limit: int
+    ) -> tuple[list, str | None]: ...
 
     @abstractmethod
     def rating_summary(self, user_id: int) -> tuple[float | None, int]:
@@ -95,7 +110,9 @@ class ReviewRepository(Repository, ABC):
 
 class TransactionRepository(Repository, ABC):
     @abstractmethod
-    def list_by_user(self, user_id: int, type_: str | None, cursor: str | None, limit: int) -> tuple[list, str | None]: ...
+    def list_by_user(
+        self, user_id: int, type_: str | None, cursor: str | None, limit: int
+    ) -> tuple[list, str | None]: ...
 
 
 class DisputeRepository(Repository, ABC):
@@ -105,13 +122,16 @@ class DisputeRepository(Repository, ABC):
 
 class NotificationRepository(Repository, ABC):
     @abstractmethod
-    def list_by_user(self, user_id: int, cursor: str | None, limit: int) -> tuple[list, str | None]: ...
+    def list_by_user(
+        self, user_id: int, cursor: str | None, limit: int
+    ) -> tuple[list, str | None]: ...
 
     @abstractmethod
     def mark_read(self, user_id: int, ids: list[int] | None, all_: bool) -> int: ...
 
 
 # ---------------- внешние порты (adapters в infrastructure/) ----------------
+
 
 class SmsSenderPort(ABC):
     @abstractmethod

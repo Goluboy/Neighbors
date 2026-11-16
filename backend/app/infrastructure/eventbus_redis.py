@@ -1,4 +1,5 @@
 """EventBusPort -> Redis Pub/Sub (real-time чат и уведомления, открытый вопрос №1)."""
+
 import json
 from typing import Any
 

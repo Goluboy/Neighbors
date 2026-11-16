@@ -1,4 +1,5 @@
 """Доменные словари (enum'ы). Чистый слой: без SQLAlchemy и Pydantic."""
+
 import enum
 
 
@@ -14,7 +15,7 @@ class UserStatus(str, enum.Enum):
 
 class ItemStatus(str, enum.Enum):
     available = "available"
-    booked = "booked"      # «Забронирована»: заявка создана, ждёт решения владельца
+    booked = "booked"  # «Забронирована»: заявка создана, ждёт решения владельца
     rented = "rented"
     hidden = "hidden"
 
@@ -30,16 +31,16 @@ class BookingStatus(str, enum.Enum):
 
 
 class TransactionType(str, enum.Enum):
-    deposit = "deposit"      # пополнение баланса (учебная заглушка)
+    deposit = "deposit"  # пополнение баланса (учебная заглушка)
     withdrawal = "withdrawal"
-    hold = "hold"            # заморозка залога (НЕ списание)
-    release = "release"      # разморозка
-    charge = "charge"        # списание в пользу владельца по решению модератора
+    hold = "hold"  # заморозка залога (НЕ списание)
+    release = "release"  # разморозка
+    charge = "charge"  # списание в пользу владельца по решению модератора
 
 
 class DisputeKind(str, enum.Enum):
-    booking = "booking"      # спор по заказу (UC-9)
-    content = "content"      # жалоба на объявление/сообщение/пользователя (UC-10)
+    booking = "booking"  # спор по заказу (UC-9)
+    content = "content"  # жалоба на объявление/сообщение/пользователя (UC-10)
 
 
 class DisputeStatus(str, enum.Enum):

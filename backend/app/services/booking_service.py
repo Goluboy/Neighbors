@@ -6,6 +6,7 @@
   которые presentation-слой мапит в ответы;
 - транзакцией управляет UnitOfWork, переданный извне (deps.py).
 """
+
 from decimal import Decimal
 
 from app.core.exceptions import (
@@ -26,9 +27,16 @@ from app.domain.ports.repositories import (
 
 
 class BookingService:
-    def __init__(self, *, uow, bookings: BookingRepository, items: ItemRepository,
-                 wallets: WalletRepository, notifications: NotificationRepository,
-                 event_bus: EventBusPort):
+    def __init__(
+        self,
+        *,
+        uow,
+        bookings: BookingRepository,
+        items: ItemRepository,
+        wallets: WalletRepository,
+        notifications: NotificationRepository,
+        event_bus: EventBusPort,
+    ):
         self.uow = uow
         self.bookings = bookings
         self.items = items
@@ -46,10 +54,16 @@ class BookingService:
         if item.owner_id == renter_id:
             raise PermissionDeniedError("Нельзя арендовать собственную вещь")
 
-        booking = self.bookings.add(dict(
-            item_id=item.id, renter_id=renter_id, status=BookingStatus.pending,
-            deposit_held_amount=0, start_date=start_date, end_date=end_date,
-        ))
+        booking = self.bookings.add(
+            dict(
+                item_id=item.id,
+                renter_id=renter_id,
+                status=BookingStatus.pending,
+                deposit_held_amount=0,
+                start_date=start_date,
+                end_date=end_date,
+            )
+        )
 
         deposit = Decimal(str(item.deposit_amount or 0))
         if deposit > 0:
@@ -57,10 +71,13 @@ class BookingService:
             booking.deposit_held_amount = deposit
 
         item.status = ItemStatus.booked  # «Забронирована» до решения владельца
-        self.notifications.add(dict(
-            user_id=item.owner_id, type=NotificationType.new_booking,
-            message=f"Новая заявка на «{item.title}»",
-        ))
+        self.notifications.add(
+            dict(
+                user_id=item.owner_id,
+                type=NotificationType.new_booking,
+                message=f"Новая заявка на «{item.title}»",
+            )
+        )
         self.event_bus.publish(f"bookings:{booking.id}", {"event": "new_booking"})
         self.uow.commit()
         return booking
@@ -72,16 +89,25 @@ class BookingService:
             raise InsufficientFundsError("Недостаточно средств для залога — пополните баланс")
         wallet.total_balance -= amount
         wallet.held_balance += amount
-        self.uow.transactions.add(dict(
-            user_id=renter_id, booking_id=booking.id, type=TransactionType.hold, amount=amount,
-        ))
+        self.uow.transactions.add(
+            dict(
+                user_id=renter_id,
+                booking_id=booking.id,
+                type=TransactionType.hold,
+                amount=amount,
+            )
+        )
 
     # ---------- UC-4: решение владельца ----------
     def approve(self, booking_id: int, owner_id: int):
         booking = self._get_owner_booking(booking_id, owner_id)
         assert_transition(booking.status, BookingStatus.approved)
         booking.status = BookingStatus.approved
-        self._notify(booking.renter_id, NotificationType.booking_approved, "Заявка одобрена — договоритесь о встрече в чате")
+        self._notify(
+            booking.renter_id,
+            NotificationType.booking_approved,
+            "Заявка одобрена — договоритесь о встрече в чате",
+        )
         self.uow.commit()
         return booking
 
@@ -91,7 +117,11 @@ class BookingService:
         booking.status = BookingStatus.rejected
         self._release_deposit(booking)
         self._free_item(booking)
-        self._notify(booking.renter_id, NotificationType.booking_rejected, "Владелец отклонил заявку, залог разморожен")
+        self._notify(
+            booking.renter_id,
+            NotificationType.booking_rejected,
+            "Владелец отклонил заявку, залог разморожен",
+        )
         self.uow.commit()
         return booking
 
@@ -132,8 +162,11 @@ class BookingService:
         booking = self._get_renter_booking(booking_id, renter_id)
         if booking.status != BookingStatus.rented:
             raise ConflictError("Возврат возможен только из статуса «в аренде»")
-        self._notify(booking.item.owner_id, NotificationType.return_reminder,
-                     "Арендатор готов вернуть вещь — договоритесь о встрече")
+        self._notify(
+            booking.item.owner_id,
+            NotificationType.return_reminder,
+            "Арендатор готов вернуть вещь — договоритесь о встрече",
+        )
         self.uow.commit()
         return booking
 
@@ -141,7 +174,7 @@ class BookingService:
         booking = self._get_owner_booking(booking_id, owner_id)
         assert_transition(booking.status, BookingStatus.returned)
         booking.status = BookingStatus.returned
-        self._release_deposit(booking)   # разморозка залога
+        self._release_deposit(booking)  # разморозка залога
         self._free_item(booking)
         # TODO: открыть окно взаимных оценок (ReviewService, UC-5 шаг 6)
         self.uow.commit()
@@ -152,10 +185,16 @@ class BookingService:
         booking = self._get_owner_booking(booking_id, owner_id)
         assert_transition(booking.status, BookingStatus.disputed)
         booking.status = BookingStatus.disputed
-        self.uow.disputes.add(dict(
-            kind="booking", booking_id=booking.id, reporter_id=owner_id,
-            reported_user_id=booking.renter_id, reason=reason, status="pending",
-        ))
+        self.uow.disputes.add(
+            dict(
+                kind="booking",
+                booking_id=booking.id,
+                reporter_id=owner_id,
+                reported_user_id=booking.renter_id,
+                reason=reason,
+                status="pending",
+            )
+        )
         self.uow.commit()
         return booking
 
@@ -168,10 +207,14 @@ class BookingService:
         assert wallet is not None
         wallet.held_balance -= amount
         wallet.total_balance += amount
-        self.uow.transactions.add(dict(
-            user_id=booking.renter_id, booking_id=booking.id,
-            type=TransactionType.release, amount=amount,
-        ))
+        self.uow.transactions.add(
+            dict(
+                user_id=booking.renter_id,
+                booking_id=booking.id,
+                type=TransactionType.release,
+                amount=amount,
+            )
+        )
 
     def _free_item(self, booking) -> None:
         target = ITEM_STATUS_BY_BOOKING[booking.status]

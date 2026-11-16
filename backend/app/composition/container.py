@@ -3,6 +3,7 @@
 FastAPI-зависимости (app/api/deps.py) берут сервисы отсюда. Подмена реализаций
 (Redis -> InMemory, S3 -> Local) — только здесь или через dependency_overrides в тестах.
 """
+
 from functools import lru_cache
 
 from app.domain.ports.repositories import CodeStoragePort, EventBusPort, SmsSenderPort
@@ -31,4 +32,5 @@ def get_event_bus() -> EventBusPort:
 @lru_cache
 def get_file_storage():
     from app.infrastructure.storage_s3 import S3FileStorage  # лениво: boto3 не обязателен в тестах
+
     return S3FileStorage()

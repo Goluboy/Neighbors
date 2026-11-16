@@ -1,4 +1,5 @@
 """SQLAlchemy engine и session factory. PostgreSQL + PostGIS в проде, SQLite для тестов."""
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import DeclarativeBase, sessionmaker
 
@@ -11,6 +12,7 @@ class Base(DeclarativeBase):
 
 # lazy-engine: не требует установленного драйвера БД при импорте (важно для каркаса/тестов)
 _engine = None
+
 
 def get_engine():
     global _engine

@@ -1,4 +1,5 @@
 """Admin/moderation endpoints (UC-9, UC-10). Требует роль moderator."""
+
 from fastapi import APIRouter, Depends
 
 from app.api.deps import require_moderator

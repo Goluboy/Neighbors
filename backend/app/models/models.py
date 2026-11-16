@@ -1,4 +1,5 @@
 """SQLAlchemy-модели. Каркас: таблицы покрывают ER-диаграмму спецификации."""
+
 import enum
 from datetime import datetime
 
@@ -36,11 +37,11 @@ class BookingStatus(str, enum.Enum):
 
 
 class TransactionType(str, enum.Enum):
-    deposit = "deposit"        # пополнение баланса
+    deposit = "deposit"  # пополнение баланса
     withdrawal = "withdrawal"
-    hold = "hold"              # заморозка залога
-    release = "release"        # разморозка
-    charge = "charge"          # списание в пользу владельца (по решению модератора)
+    hold = "hold"  # заморозка залога
+    release = "release"  # разморозка
+    charge = "charge"  # списание в пользу владельца (по решению модератора)
 
 
 class Category(Base):
@@ -65,7 +66,9 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    phone: Mapped[str] = mapped_column(String(20), unique=True, index=True)  # только для верификации
+    phone: Mapped[str] = mapped_column(
+        String(20), unique=True, index=True
+    )  # только для верификации
     name: Mapped[str | None] = mapped_column(String(100))
     avatar_url: Mapped[str | None] = mapped_column(String(500))
     bio: Mapped[str | None] = mapped_column(Text)
@@ -118,7 +121,9 @@ class Item(Base):
 
     owner: Mapped[User] = relationship(back_populates="items")
     category: Mapped[Category] = relationship(back_populates="items")
-    photos: Mapped[list["ItemPhoto"]] = relationship(back_populates="item", cascade="all, delete-orphan")
+    photos: Mapped[list["ItemPhoto"]] = relationship(
+        back_populates="item", cascade="all, delete-orphan"
+    )
     bookings: Mapped[list["Booking"]] = relationship(back_populates="item")
 
 
@@ -139,7 +144,9 @@ class Booking(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), index=True)
     renter_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    status: Mapped[BookingStatus] = mapped_column(Enum(BookingStatus), default=BookingStatus.pending)
+    status: Mapped[BookingStatus] = mapped_column(
+        Enum(BookingStatus), default=BookingStatus.pending
+    )
     deposit_held_amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
     start_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -156,6 +163,7 @@ class Booking(Base):
 
 class Message(Base):
     """Чат привязан к бронированию — защита от спама, телефоны не раскрываются."""
+
     __tablename__ = "messages"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -170,6 +178,7 @@ class Message(Base):
 
 class Review(Base):
     """Взаимные оценки. Не видны стороне, пока она не поставила свою или не истёк срок (is_visible)."""
+
     __tablename__ = "reviews"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -197,6 +206,7 @@ class WalletTransaction(Base):
 
 class Dispute(Base):
     """Спор по заказу (UC-9) или жалоба на контент (UC-10)."""
+
     __tablename__ = "disputes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -217,7 +227,9 @@ class Notification(Base):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    type: Mapped[str] = mapped_column(String(50))  # new_booking|booking_approved|message|return_reminder|dispute_update
+    type: Mapped[str] = mapped_column(
+        String(50)
+    )  # new_booking|booking_approved|message|return_reminder|dispute_update
     message: Mapped[str] = mapped_column(Text)
     is_read: Mapped[bool] = mapped_column(Boolean, default=False)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

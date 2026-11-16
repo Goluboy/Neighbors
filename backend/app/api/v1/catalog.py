@@ -6,6 +6,7 @@
 - без точки проживания доступен только city.
 В выдаче показывается distance_m, адрес владельца не раскрывается.
 """
+
 from fastapi import APIRouter, Depends
 
 from app.api.deps import get_current_user

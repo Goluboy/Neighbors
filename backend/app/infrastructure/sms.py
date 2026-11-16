@@ -3,6 +3,7 @@
 В production: SmsSenderPort -> интеграция с SMS-шлюзом, CodeStoragePort -> Redis.
 Для учебного MVP оба реализованы in-memory заглушками.
 """
+
 import secrets
 import time
 

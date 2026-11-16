@@ -1,4 +1,5 @@
 """Главный роутер v1: собирает все модули."""
+
 from fastapi import APIRouter
 
 from app.api.v1 import (

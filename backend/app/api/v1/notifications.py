@@ -1,4 +1,5 @@
 """Notifications endpoints (UC-8)."""
+
 from fastapi import APIRouter, Depends
 
 from app.api.deps import get_current_user
@@ -14,8 +15,9 @@ def list_notifications(cursor: str | None = None, user: User = Depends(get_curre
 
 
 @router.post("/read")
-def mark_read(ids: list[int] | None = None, all_: bool = False,
-              user: User = Depends(get_current_user)):
+def mark_read(
+    ids: list[int] | None = None, all_: bool = False, user: User = Depends(get_current_user)
+):
     raise NotImplementedError
 
 

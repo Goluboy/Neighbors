@@ -8,7 +8,15 @@ def test_openapi_has_all_tags(client):
     spec = client.get("/openapi.json").json()
     paths = list(spec["paths"])
     # каркас должен отдавать все ключевые группы эндпоинтов
-    for prefix in ["/api/v1/auth", "/api/v1/users", "/api/v1/items",
-                   "/api/v1/catalog", "/api/v1/bookings", "/api/v1/wallet",
-                   "/api/v1/notifications", "/api/v1/reports", "/api/v1/admin"]:
+    for prefix in [
+        "/api/v1/auth",
+        "/api/v1/users",
+        "/api/v1/items",
+        "/api/v1/catalog",
+        "/api/v1/bookings",
+        "/api/v1/wallet",
+        "/api/v1/notifications",
+        "/api/v1/reports",
+        "/api/v1/admin",
+    ]:
         assert any(p.startswith(prefix) for p in paths), prefix

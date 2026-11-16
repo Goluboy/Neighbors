@@ -3,6 +3,7 @@
 Репозитории — единственное место, где services-слой соприкасается с ORM.
 Порты объявлены в app/domain/ports/repositories.py.
 """
+
 from typing import Iterable
 
 from sqlalchemy import func as sa_func
@@ -51,8 +52,9 @@ class SqlUserRepository(BaseSqlRepo, UserRepository):
         return self.db.scalar(select(m.User).where(m.User.phone == phone))
 
     def list_active(self, offset: int = 0, limit: int = 50):
-        stmt = (select(m.User).where(m.User.status == m.UserStatus.active)
-                .offset(offset).limit(limit))
+        stmt = (
+            select(m.User).where(m.User.status == m.UserStatus.active).offset(offset).limit(limit)
+        )
         return list(self.db.scalars(stmt))
 
 
@@ -88,8 +90,7 @@ class SqlItemRepository(BaseSqlRepo, ItemRepository):
             stmt = stmt.where(m.Item.status == ItemStatus(status))
         return list(self.db.scalars(stmt.order_by(m.Item.created_at.desc())))
 
-    def search(self, *, lat, lon, radius_km, mode, category_id, q,
-               availability, cursor, limit):
+    def search(self, *, lat, lon, radius_km, mode, category_id, q, availability, cursor, limit):
         """Витрина UC-3.
 
         TODO(prod): заменить на PostGIS ST_DWithin + ST_Distance; здесь — каркас:
@@ -101,8 +102,12 @@ class SqlItemRepository(BaseSqlRepo, ItemRepository):
             stmt = stmt.where(m.Item.category_id == category_id)
         if q:
             like = f"%{q.lower()}%"
-            stmt = stmt.where(or_(sa_func.lower(m.Item.title).like(like),
-                                  sa_func.lower(m.Item.description).like(like)))
+            stmt = stmt.where(
+                or_(
+                    sa_func.lower(m.Item.title).like(like),
+                    sa_func.lower(m.Item.description).like(like),
+                )
+            )
         if availability == "available":
             stmt = stmt.where(m.Item.status == ItemStatus.available)
         elif availability == "busy":
@@ -113,7 +118,9 @@ class SqlItemRepository(BaseSqlRepo, ItemRepository):
         stmt = stmt.order_by(m.Item.id.desc()).limit(limit + 1)
         rows = list(self.db.scalars(stmt))
         next_cursor = str(rows[limit - 1].id) if len(rows) > limit else None
-        items = [(it, None) for it in rows[:limit]]  # (item, distance_m) — distance считает GeoService
+        items = [
+            (it, None) for it in rows[:limit]
+        ]  # (item, distance_m) — distance считает GeoService
         return items, next_cursor
 
 
@@ -124,6 +131,7 @@ class SqlBookingRepository(BaseSqlRepo, BookingRepository):
         stmt = select(m.Booking).where(column == user_id)
         if status:
             from app.domain.enums import BookingStatus
+
             stmt = stmt.where(m.Booking.status == BookingStatus(status))
         return list(self.db.scalars(stmt.order_by(m.Booking.created_at.desc())))
 
@@ -131,10 +139,14 @@ class SqlBookingRepository(BaseSqlRepo, BookingRepository):
         return self._list(m.Booking.renter_id, renter_id, status)
 
     def list_for_owner(self, owner_id: int, status: str | None):
-        stmt = (select(m.Booking).join(m.Item, m.Booking.item_id == m.Item.id)
-                .where(m.Item.owner_id == owner_id))
+        stmt = (
+            select(m.Booking)
+            .join(m.Item, m.Booking.item_id == m.Item.id)
+            .where(m.Item.owner_id == owner_id)
+        )
         if status:
             from app.domain.enums import BookingStatus
+
             stmt = stmt.where(m.Booking.status == BookingStatus(status))
         return list(self.db.scalars(stmt.order_by(m.Booking.created_at.desc())))
 
@@ -143,8 +155,9 @@ class SqlCategoryRepository(BaseSqlRepo, CategoryRepository):
     model = m.Category
 
     def list_active(self):
-        stmt = (select(m.Category).where(m.Category.is_active.is_(True))
-                .order_by(m.Category.sort_order))
+        stmt = (
+            select(m.Category).where(m.Category.is_active.is_(True)).order_by(m.Category.sort_order)
+        )
         return list(self.db.scalars(stmt))
 
     def get_by_slug(self, slug: str):
@@ -165,21 +178,29 @@ class SqlMessageRepository(BaseSqlRepo, MessageRepository):
         return rows[:limit], next_cursor
 
     def mark_read_until(self, booking_id: int, user_id: int, until_message_id: int) -> int:
-        stmt = (update(m.Message)
-                .where(m.Message.booking_id == booking_id,
-                       m.Message.sender_id != user_id,
-                       m.Message.id <= until_message_id,
-                       m.Message.is_read.is_(False))
-                .values(is_read=True))
+        stmt = (
+            update(m.Message)
+            .where(
+                m.Message.booking_id == booking_id,
+                m.Message.sender_id != user_id,
+                m.Message.id <= until_message_id,
+                m.Message.is_read.is_(False),
+            )
+            .values(is_read=True)
+        )
         return self.db.execute(stmt).rowcount or 0
 
     def unread_count(self, user_id: int) -> int:
-        stmt = (select(sa_func.count(m.Message.id))
-                .join(m.Booking, m.Message.booking_id == m.Booking.id)
-                .join(m.Item, m.Booking.item_id == m.Item.id)
-                .where(or_(m.Booking.renter_id == user_id, m.Item.owner_id == user_id),
-                       m.Message.sender_id != user_id,
-                       m.Message.is_read.is_(False)))
+        stmt = (
+            select(sa_func.count(m.Message.id))
+            .join(m.Booking, m.Message.booking_id == m.Booking.id)
+            .join(m.Item, m.Booking.item_id == m.Item.id)
+            .where(
+                or_(m.Booking.renter_id == user_id, m.Item.owner_id == user_id),
+                m.Message.sender_id != user_id,
+                m.Message.is_read.is_(False),
+            )
+        )
         return self.db.scalar(stmt) or 0
 
 
@@ -190,7 +211,9 @@ class SqlReviewRepository(BaseSqlRepo, ReviewRepository):
         return list(self.db.scalars(select(m.Review).where(m.Review.booking_id == booking_id)))
 
     def list_visible_for_user(self, user_id: int, cursor: str | None, limit: int):
-        stmt = select(m.Review).where(m.Review.reviewee_id == user_id, m.Review.is_visible.is_(True))
+        stmt = select(m.Review).where(
+            m.Review.reviewee_id == user_id, m.Review.is_visible.is_(True)
+        )
         last_id = _decode_cursor(cursor)
         if last_id:
             stmt = stmt.where(m.Review.id < last_id)
@@ -200,8 +223,9 @@ class SqlReviewRepository(BaseSqlRepo, ReviewRepository):
         return rows[:limit], next_cursor
 
     def rating_summary(self, user_id: int):
-        stmt = (select(sa_func.avg(m.Review.rating), sa_func.count(m.Review.rating))
-                .where(m.Review.reviewee_id == user_id, m.Review.is_visible.is_(True)))
+        stmt = select(sa_func.avg(m.Review.rating), sa_func.count(m.Review.rating)).where(
+            m.Review.reviewee_id == user_id, m.Review.is_visible.is_(True)
+        )
         avg, cnt = self.db.execute(stmt).one()
         return (round(float(avg), 2) if avg is not None else None), int(cnt or 0)
 
@@ -211,6 +235,7 @@ class SqlTransactionRepository(BaseSqlRepo, TransactionRepository):
 
     def list_by_user(self, user_id: int, type_: str | None, cursor: str | None, limit: int):
         from app.domain.enums import TransactionType
+
         stmt = select(m.WalletTransaction).where(m.WalletTransaction.user_id == user_id)
         if type_:
             stmt = stmt.where(m.WalletTransaction.type == TransactionType(type_))
@@ -245,8 +270,9 @@ class SqlNotificationRepository(BaseSqlRepo, NotificationRepository):
         return rows[:limit], next_cursor
 
     def mark_read(self, user_id: int, ids: list[int] | None, all_: bool) -> int:
-        stmt = update(m.Notification).where(m.Notification.user_id == user_id,
-                                            m.Notification.is_read.is_(False))
+        stmt = update(m.Notification).where(
+            m.Notification.user_id == user_id, m.Notification.is_read.is_(False)
+        )
         if not all_:
             stmt = stmt.where(m.Notification.id.in_(ids or []))
         return self.db.execute(stmt.values(is_read=True)).rowcount or 0

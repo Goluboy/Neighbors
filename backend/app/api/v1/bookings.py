@@ -2,6 +2,7 @@
 
 Жизненный цикл: pending -> approved/rejected -> rented -> returned/disputed/cancelled
 """
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
@@ -15,15 +16,17 @@ router = APIRouter(prefix="/bookings", tags=["bookings"])
 
 
 @router.post("", response_model=BookingOut, status_code=201)
-def create_booking(data: BookingCreate, user: User = Depends(get_current_user),
-                   db: Session = Depends(get_db)):
+def create_booking(
+    data: BookingCreate, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     """Создать заявку. Атомарно холдирует залог (если > 0); при нехватке средств — 400."""
     return BookingService(db).create_booking(user, data.item_id, data.start_date, data.end_date)
 
 
 @router.get("/me", response_model=list[BookingOut])
-def my_bookings(as_role: str = "renter", status: str | None = None,
-                user: User = Depends(get_current_user)):
+def my_bookings(
+    as_role: str = "renter", status: str | None = None, user: User = Depends(get_current_user)
+):
     raise NotImplementedError
 
 
@@ -34,27 +37,30 @@ def get_booking(booking_id: int, user: User = Depends(get_current_user)):
 
 # --- действия владельца ---
 @router.post("/{booking_id}/approve", response_model=BookingOut)
-def approve(booking_id: int, user: User = Depends(get_current_user),
-            db: Session = Depends(get_db)):
+def approve(booking_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return BookingService(db).approve(booking_id, user.id)
 
 
 @router.post("/{booking_id}/reject", response_model=BookingOut)
-def reject(booking_id: int, user: User = Depends(get_current_user),
-           db: Session = Depends(get_db)):
+def reject(booking_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     return BookingService(db).reject(booking_id, user.id)
 
 
 @router.post("/{booking_id}/confirm-return", response_model=BookingOut)
-def confirm_return(booking_id: int, user: User = Depends(get_current_user),
-                   db: Session = Depends(get_db)):
+def confirm_return(
+    booking_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     """Вещь получена без повреждений -> разморозка залога, статус returned."""
     return BookingService(db).confirm_return(booking_id, user.id)
 
 
 @router.post("/{booking_id}/report-issue", response_model=BookingOut)
-def report_issue(booking_id: int, reason: str, user: User = Depends(get_current_user),
-                 db: Session = Depends(get_db)):
+def report_issue(
+    booking_id: int,
+    reason: str,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
     """Порча вещи -> спорная ситуация, разморозка заблокирована, подключается модератор."""
     return BookingService(db).report_issue(booking_id, user.id, reason)
 
@@ -66,8 +72,9 @@ def cancel(booking_id: int, user: User = Depends(get_current_user)):
 
 
 @router.post("/{booking_id}/confirm-receipt", response_model=BookingOut)
-def confirm_receipt(booking_id: int, user: User = Depends(get_current_user),
-                    db: Session = Depends(get_db)):
+def confirm_receipt(
+    booking_id: int, user: User = Depends(get_current_user), db: Session = Depends(get_db)
+):
     """«Вещь у меня, всё отлично» -> старт таймера аренды."""
     return BookingService(db).confirm_receipt(booking_id, user.id)
 

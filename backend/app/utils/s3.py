@@ -1,4 +1,5 @@
 """S3-совместимый клиент (SeaweedFS) — заглушка интерфейса. Загрузка фото через бэкенд."""
+
 import boto3
 from botocore.config import Config
 

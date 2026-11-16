@@ -2,6 +2,7 @@
 
 Сервисы вызывают uow.commit()/rollback(); вне UoW они не знают ни сессий, ни ORM.
 """
+
 from sqlalchemy.orm import Session
 
 from app.persistence import models as m

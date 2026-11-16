@@ -4,6 +4,7 @@
 порты app/domain/ports и не импортируют этот модуль напрямую (только репозитории).
 Enum-словари берутся из domain.enums — единый источник истины.
 """
+
 from datetime import datetime
 
 from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
@@ -42,7 +43,9 @@ class User(Base):
     __tablename__ = "users"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
-    phone: Mapped[str] = mapped_column(String(20), unique=True, index=True)  # только для верификации
+    phone: Mapped[str] = mapped_column(
+        String(20), unique=True, index=True
+    )  # только для верификации
     name: Mapped[str | None] = mapped_column(String(100))
     avatar_url: Mapped[str | None] = mapped_column(String(500))
     bio: Mapped[str | None] = mapped_column(Text)
@@ -95,7 +98,9 @@ class Item(Base):
 
     owner: Mapped[User] = relationship(back_populates="items")
     category: Mapped[Category] = relationship(back_populates="items")
-    photos: Mapped[list["ItemPhoto"]] = relationship(back_populates="item", cascade="all, delete-orphan")
+    photos: Mapped[list["ItemPhoto"]] = relationship(
+        back_populates="item", cascade="all, delete-orphan"
+    )
     bookings: Mapped[list["Booking"]] = relationship(back_populates="item")
 
 
@@ -117,7 +122,9 @@ class Booking(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     item_id: Mapped[int] = mapped_column(ForeignKey("items.id"), index=True)
     renter_id: Mapped[int] = mapped_column(ForeignKey("users.id"), index=True)
-    status: Mapped[BookingStatus] = mapped_column(Enum(BookingStatus), default=BookingStatus.pending)
+    status: Mapped[BookingStatus] = mapped_column(
+        Enum(BookingStatus), default=BookingStatus.pending
+    )
     deposit_held_amount: Mapped[float] = mapped_column(Numeric(12, 2), default=0)
     start_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     end_date: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -134,6 +141,7 @@ class Booking(Base):
 
 class Message(Base):
     """Чат привязан к бронированию — защита от спама, телефоны не раскрываются."""
+
     __tablename__ = "messages"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -148,6 +156,7 @@ class Message(Base):
 
 class Review(Base):
     """Взаимные оценки. Не видны стороне, пока она не поставила свою или не истёк срок (is_visible)."""
+
     __tablename__ = "reviews"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
@@ -175,6 +184,7 @@ class WalletTransaction(Base):
 
 class Dispute(Base):
     """Спор по заказу (UC-9) или жалоба на контент (UC-10)."""
+
     __tablename__ = "disputes"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True)

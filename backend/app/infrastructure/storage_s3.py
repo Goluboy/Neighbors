@@ -1,4 +1,5 @@
 """FileStoragePort -> S3-совместимое хранилище (SeaweedFS, boto3). Загрузка фото через бэкенд (решение по открытому вопросу №2)."""
+
 import mimetypes
 import uuid
 
@@ -43,8 +44,7 @@ class S3FileStorage(FileStoragePort):
             raise ValueError("Разрешены только изображения")
 
     def upload(self, key: str, data: bytes, content_type: str) -> str:
-        self._client.put_object(Bucket=self._bucket, Key=key, Body=data,
-                                ContentType=content_type)
+        self._client.put_object(Bucket=self._bucket, Key=key, Body=data, ContentType=content_type)
         return f"{settings.S3_ENDPOINT}/{self._bucket}/{key}"
 
     def delete(self, key: str) -> None:

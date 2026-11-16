@@ -65,9 +65,8 @@ Read from code, not guesswork.
 3. Services call `repo.add(dict(...))`; `BaseSqlRepo.add(entity)` puts object into session. Dict fails. Pick one contract, apply to every repository.
 4. No `app/api/error_handlers.py`, though `app/core/exceptions.py` references it. `DomainError` becomes 500 instead of 4xx.
 5. WS chat: `chat_websocket` lacks `@router.websocket`. Route absent.
-6. `backend/docker-compose.yml`: `build: ./backend` resolves from file directory → `backend/backend`. No such directory. `api` service will not build.
-7. `app/services/auth_service.py`: no `uow`, no commit (TODO). `User` and `Wallet` never persist.
-8. Tests: only `/health` and route-group presence. No logic covered.
+6. `app/services/auth_service.py`: no `uow`, no commit (TODO). `User` and `Wallet` never persist.
+7. Tests: only `/health` and route-group presence. No logic covered.
 
 ## Tests
 - SQLite in-memory. Do not start PostGIS, Redis, S3 in tests.

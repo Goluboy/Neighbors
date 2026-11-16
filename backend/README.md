@@ -19,18 +19,37 @@ REST API на FastAPI, Python 3.13. Фронтенд живёт отдельно
 
 ## Быстрый старт
 
+Все команды ниже выполняются из корня проекта.
+
+Инфраструктура (PostgreSQL + PostGIS, Redis, SeaweedFS) поднимается из
+[`backend/docker-compose.yml`](docker-compose.yml):
+
 ```bash
-cd backend
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
+docker compose -f backend/docker-compose.yml up -d db redis seaweedfs
 ```
 
-Инфраструктура поднимается через Docker:
+Весь стек целиком, включая `api`:
 
 ```bash
-docker compose up -d db redis seaweedfs
+docker compose -f backend/docker-compose.yml up -d
+```
+
+Python-окружение и зависимости:
+
+```bash
+python3 -m venv backend/.venv
+source backend/.venv/bin/activate
+pip install -r backend/requirements.txt
+cp backend/.env.example backend/.env
+```
+
+`backend/.env` читается относительно рабочей директории, поэтому приложение,
+тесты и миграции запускаются из `backend/`:
+
+```bash
+cd backend
+uvicorn app.main:app --reload --port 8000
+pytest tests -v
 ```
 
 SeaweedFS поднимается с S3 API на `http://localhost:8333`; креды и бакет описаны
@@ -39,17 +58,10 @@ SeaweedFS поднимается с S3 API на `http://localhost:8333`; кре�
 Если `api` тоже запускается в Docker, в его `.env` нужен
 `S3_ENDPOINT=http://seaweedfs:8333` — внутри контейнера `localhost` указывает на него самого.
 
-Запуск приложения и тестов:
-
-```bash
-uvicorn app.main:app --reload --port 8000
-pytest tests -v
-```
-
 Swagger UI будет доступен на `http://localhost:8000/docs`, OpenAPI — на
 `http://localhost:8000/openapi.json`.
 
-Для миграций:
+Для миграций (из `backend/`):
 
 ```bash
 alembic revision --autogenerate -m "schema"
@@ -57,4 +69,5 @@ alembic upgrade head
 ```
 
 `Makefile` содержит те же команды, плюс `make lint`, `make typecheck` и `make layers`.
-Их же запускает CI (`.github/workflows/ci.yml`) — вместе с `make test` и `docker compose config`.
+Их же запускает CI (`.github/workflows/ci.yml`) — вместе с `make test` и
+`docker compose -f backend/docker-compose.yml config`.

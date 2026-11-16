@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import get_current_user
 from app.models import User
-from app.schemas import UserProfile, UserUpdate, LocationUpdate, UserPublic
+from app.schemas import LocationUpdate, UserProfile, UserPublic, UserUpdate
 
 router = APIRouter(prefix="/users", tags=["users"])
 

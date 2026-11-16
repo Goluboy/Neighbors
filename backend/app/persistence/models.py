@@ -6,14 +6,17 @@ Enum-словари берутся из domain.enums — единый источ
 """
 from datetime import datetime
 
-from sqlalchemy import (
-    Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
-)
+from sqlalchemy import Boolean, DateTime, Enum, ForeignKey, Integer, Numeric, String, Text, func
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.core.database import Base
 from app.domain.enums import (
-    BookingStatus, RentalFormat, TransactionType, UserRole, UserStatus, ItemStatus,
+    BookingStatus,
+    ItemStatus,
+    RentalFormat,
+    TransactionType,
+    UserRole,
+    UserStatus,
 )
 
 

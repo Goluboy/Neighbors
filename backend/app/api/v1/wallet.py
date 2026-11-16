@@ -3,7 +3,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import get_current_user
 from app.models import User
-from app.schemas import WalletOut, TopUpRequest, TransactionOut
+from app.schemas import TopUpRequest, TransactionOut, WalletOut
 
 router = APIRouter(prefix="/wallet", tags=["wallet"])
 

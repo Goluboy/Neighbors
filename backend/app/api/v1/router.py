@@ -2,8 +2,17 @@
 from fastapi import APIRouter
 
 from app.api.v1 import (
-    admin, auth, bookings, catalog, categories, chat,
-    items, notifications, reports, users, wallet,
+    admin,
+    auth,
+    bookings,
+    catalog,
+    categories,
+    chat,
+    items,
+    notifications,
+    reports,
+    users,
+    wallet,
 )
 
 api_router = APIRouter()

@@ -6,7 +6,6 @@ def test_health(client):
 
 def test_openapi_has_all_tags(client):
     spec = client.get("/openapi.json").json()
-    tags = {t["name"] for t in spec["tags"]} if "tags" in spec["info"] else set()
     paths = list(spec["paths"])
     # каркас должен отдавать все ключевые группы эндпоинтов
     for prefix in ["/api/v1/auth", "/api/v1/users", "/api/v1/items",

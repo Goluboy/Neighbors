@@ -6,9 +6,16 @@ from sqlalchemy.orm import Session
 
 from app.persistence import models as m
 from app.persistence.api.repositories.sqlalchemy_repositories import (
-    SqlBookingRepository, SqlCategoryRepository, SqlDisputeRepository, SqlItemRepository,
-    SqlMessageRepository, SqlNotificationRepository, SqlReviewRepository,
-    SqlTransactionRepository, SqlUserRepository, SqlWalletRepository,
+    SqlBookingRepository,
+    SqlCategoryRepository,
+    SqlDisputeRepository,
+    SqlItemRepository,
+    SqlMessageRepository,
+    SqlNotificationRepository,
+    SqlReviewRepository,
+    SqlTransactionRepository,
+    SqlUserRepository,
+    SqlWalletRepository,
 )
 
 

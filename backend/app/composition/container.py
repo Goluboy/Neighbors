@@ -5,7 +5,6 @@ FastAPI-зависимости (app/api/deps.py) берут сервисы от�
 """
 from functools import lru_cache
 
-from app.core.config import settings
 from app.domain.ports.repositories import CodeStoragePort, EventBusPort, SmsSenderPort
 from app.infrastructure.eventbus_redis import InMemoryEventBus
 from app.infrastructure.sms import ConsoleSmsSender, InMemoryCodeStorage

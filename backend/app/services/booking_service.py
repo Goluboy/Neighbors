@@ -9,12 +9,19 @@
 from decimal import Decimal
 
 from app.core.exceptions import (
-    ConflictError, InsufficientFundsError, NotFoundError, PermissionDeniedError,
+    ConflictError,
+    InsufficientFundsError,
+    NotFoundError,
+    PermissionDeniedError,
 )
 from app.domain.booking_state_machine import ITEM_STATUS_BY_BOOKING, assert_transition
 from app.domain.enums import BookingStatus, ItemStatus, NotificationType, TransactionType
 from app.domain.ports.repositories import (
-    BookingRepository, EventBusPort, ItemRepository, NotificationRepository, WalletRepository,
+    BookingRepository,
+    EventBusPort,
+    ItemRepository,
+    NotificationRepository,
+    WalletRepository,
 )
 
 
@@ -158,6 +165,7 @@ class BookingService:
         if amount <= 0:
             return
         wallet = self.wallets.get_for_update(booking.renter_id)
+        assert wallet is not None
         wallet.held_balance -= amount
         wallet.total_balance += amount
         self.uow.transactions.add(dict(

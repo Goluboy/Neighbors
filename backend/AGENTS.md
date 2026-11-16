@@ -3,6 +3,13 @@
 FastAPI, Python 3.13. Clean architecture in progress.
 Code is truth. README is intent. This file is rules.
 
+## Scope
+Backend only. A frontend may be added later as a sibling directory (e.g. `frontend/`) with its own rules file and its own CI workflow. When it appears:
+- Keep this file's rules backend-only; do not mix frontend tooling into `backend/`.
+- CI: `.github/workflows/ci.yml` is backend CI (`working-directory: backend`). Frontend needs a separate workflow, don't fold it into this one.
+- Root-level files (`.gitignore`, `README.md`, `docker-compose`) may become shared — edit them with frontend in mind.
+- Backend API is a contract for the frontend: keep `../docs/API.md` current, don't break responses silently.
+
 ## Order
 1. `../Artifacts/UseCases.md`, `../docs/API.md` — what is asked.
 2. `grep -rn "UC-" app` — where it started.
@@ -22,7 +29,7 @@ alembic revision --autogenerate -m "schema"
 alembic upgrade head
 docker compose up -d db redis seaweedfs
 ```
-`make` targets: `test`, `lint`, `typecheck`, `layers`. CI (`.github/workflows/ci.yml`) runs the same four.
+`make` targets: `test`, `lint`, `typecheck`, `layers`. CI (`.github/workflows/ci.yml`, workflow "Backend CI") runs the same four.
 
 ## Layers
 Dependency rule: `api` → `services` → `domain`. `persistence` and `infrastructure` implement ports.

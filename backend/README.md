@@ -2,7 +2,7 @@
 
 Бэкенд сервиса обмена вещами между соседями (ЖК или кампус): витрина предметов,
 бронирование с залогом, внутренний чат, взаимные оценки и модерация споров.
-REST API на FastAPI, Python 3.12. Фронтенд живёт отдельно, в этом репозитории его нет.
+REST API на FastAPI, Python 3.13. Фронтенд живёт отдельно, в этом репозитории его нет.
 
 ## Стек
 
@@ -47,8 +47,7 @@ pytest tests -v
 ```
 
 Swagger UI будет доступен на `http://localhost:8000/docs`, OpenAPI — на
-`http://localhost:8000/openapi.json`. Сейчас оба шага упираются в ImportError
-из раздела «Известные проблемы».
+`http://localhost:8000/openapi.json`.
 
 Для миграций:
 
@@ -57,4 +56,5 @@ alembic revision --autogenerate -m "schema"
 alembic upgrade head
 ```
 
-`Makefile` содержит те же команды.
+`Makefile` содержит те же команды, плюс `make lint`, `make typecheck` и `make layers`.
+Их же запускает CI (`.github/workflows/ci.yml`) — вместе с `make test` и `docker compose config`.

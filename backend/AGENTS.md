@@ -1,6 +1,6 @@
 # AGENTS.md — backend
 
-FastAPI, Python 3.12. Clean architecture in progress.
+FastAPI, Python 3.13. Clean architecture in progress.
 Code is truth. README is intent. This file is rules.
 
 ## Order
@@ -22,7 +22,7 @@ alembic revision --autogenerate -m "schema"
 alembic upgrade head
 docker compose up -d db redis seaweedfs
 ```
-`make` broken: spaces, not tabs, `missing separator`. Run commands direct. Edit Makefile — use tabs.
+`make` targets: `test`, `lint`, `typecheck`, `layers`. CI (`.github/workflows/ci.yml`) runs the same four.
 
 ## Layers
 Dependency rule: `api` → `services` → `domain`. `persistence` and `infrastructure` implement ports.
@@ -60,16 +60,14 @@ New code — clean layers. Do not extend scaffold.
 
 ## Broken now
 Read from code, not guesswork.
-1. `app/api/v1/auth.py` imports `SmsCodeService`; `app/services/auth_service.py` has `AuthService`. `app.main` does not import. Tests fail. Fix API/service mismatch first.
-2. `app/api/v1/bookings.py` calls `BookingService(db)`. Constructor is keyword-only: `uow`, `bookings`, `items`, `wallets`, `notifications`, `event_bus`. Wire through `app/api/deps.py` and container.
-3. `create_booking(user, ...)` passes `User`; service expects `renter_id: int`. Pass `user.id`.
-4. Services call `repo.add(dict(...))`; `BaseSqlRepo.add(entity)` puts object into session. Dict fails. Pick one contract, apply to every repository.
-5. No `app/api/error_handlers.py`, though `app/core/exceptions.py` references it. `DomainError` becomes 500 instead of 4xx.
-6. WS chat: `chat_websocket` lacks `@router.websocket`. Route absent.
-7. `Makefile` — spaces. `make` does not parse.
-8. `backend/docker-compose.yml`: `build: ./backend` resolves from file directory → `backend/backend`. No such directory. `api` service will not build.
-9. `app/services/auth_service.py`: no `uow`, no commit (TODO). `User` and `Wallet` never persist.
-10. Tests: only `/health` and route-group presence. No logic covered.
+1. `app/api/v1/bookings.py` calls `BookingService(db)`. Constructor is keyword-only: `uow`, `bookings`, `items`, `wallets`, `notifications`, `event_bus`. Wire through `app/api/deps.py` and container.
+2. `create_booking(user, ...)` passes `User`; service expects `renter_id: int`. Pass `user.id`.
+3. Services call `repo.add(dict(...))`; `BaseSqlRepo.add(entity)` puts object into session. Dict fails. Pick one contract, apply to every repository.
+4. No `app/api/error_handlers.py`, though `app/core/exceptions.py` references it. `DomainError` becomes 500 instead of 4xx.
+5. WS chat: `chat_websocket` lacks `@router.websocket`. Route absent.
+6. `backend/docker-compose.yml`: `build: ./backend` resolves from file directory → `backend/backend`. No such directory. `api` service will not build.
+7. `app/services/auth_service.py`: no `uow`, no commit (TODO). `User` and `Wallet` never persist.
+8. Tests: only `/health` and route-group presence. No logic covered.
 
 ## Tests
 - SQLite in-memory. Do not start PostGIS, Redis, S3 in tests.
@@ -86,6 +84,6 @@ Read from code, not guesswork.
 
 ## Done when
 1. `pytest tests -v` green.
-2. `python -c "from app.main import app; print(len(app.routes))"` prints 58 (53 API + `/health` + 4 service routes).
+2. `python -c "from app.main import app; print(len(app.openapi()['paths']))"` reports 48 paths (`len(app.routes)` unreliable since FastAPI 0.163 stores included routers lazily).
 3. `grep -rn "sqlalchemy\|fastapi\|pydantic" app/domain app/services` empty.
 4. No layer imports a layer above itself.

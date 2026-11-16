@@ -10,7 +10,7 @@
 
 ## Структура каркаса
 ```
-backend/                  # FastAPI (Python 3.12)
+backend/                  # FastAPI (Python 3.13)
 ├── app/
 │   ├── main.py           # точка входа, CORS, подключение роутеров
 │   ├── core/             # config (Pydantic Settings), security (JWT), database
@@ -26,7 +26,7 @@ backend/                  # FastAPI (Python 3.12)
 ├── alembic/              # миграции
 ├── tests/                # pytest (sqlite-in-memory фикстуры)
 ├── docker-compose.yml    # PostgreSQL+PostGIS, Redis, SeaweedFS, API
-└── Makefile              # run / migrate / upgrade / test / up
+└── Makefile              # run / migrate / upgrade / test / lint / typecheck / layers / up
 
 docs/                     # API.md, ARCHITECTURE.md
 # Примечание: фронтенд (SPA) разрабатывается отдельно — этот репозиторий содержит только бэкенд.

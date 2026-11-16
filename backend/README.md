@@ -14,7 +14,7 @@ REST API на FastAPI, Python 3.12. Фронтенд живёт отдельно
 | Валидация и настройки | Pydantic 2, pydantic-settings                                |
 | Аутентификация        | JWT (`python-jose`), access 15 мин + refresh 30 дней         |
 | Кэш и real-time       | Redis (пока заглушки в памяти)                               |
-| Файлы                 | S3-совместимое хранилище, локально MinIO                     |
+| Файлы                 | S3-совместимое хранилище, локально SeaweedFS                 |
 | Тесты                 | pytest, `TestClient`, in-memory SQLite                       |
 
 ## Быстрый старт
@@ -30,8 +30,14 @@ cp .env.example .env
 Инфраструктура поднимается через Docker:
 
 ```bash
-docker compose up -d db redis minio
+docker compose up -d db redis seaweedfs
 ```
+
+SeaweedFS поднимается с S3 API на `http://localhost:8333`; креды и бакет описаны
+в [`.env.example`](.env.example) и [`seaweedfs/s3.json`](seaweedfs/s3.json)
+(бакет `neighbors-items` создаётся бэкендом при первом обращении к хранилищу).
+Если `api` тоже запускается в Docker, в его `.env` нужен
+`S3_ENDPOINT=http://seaweedfs:8333` — внутри контейнера `localhost` указывает на него самого.
 
 Запуск приложения и тестов:
 

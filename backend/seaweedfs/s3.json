@@ -1,0 +1,11 @@
+{
+  "identities": [
+    {
+      "name": "neighbors",
+      "credentials": [
+        { "accessKey": "neighbors", "secretKey": "neighbors-secret" }
+      ],
+      "actions": ["Admin", "Read", "List", "Tagging", "Write"]
+    }
+  ]
+}

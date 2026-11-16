@@ -20,7 +20,7 @@ uvicorn app.main:app --reload --port 8000
 pytest tests -v
 alembic revision --autogenerate -m "schema"
 alembic upgrade head
-docker compose up -d db redis minio
+docker compose up -d db redis seaweedfs
 ```
 `make` broken: spaces, not tabs, `missing separator`. Run commands direct. Edit Makefile — use tabs.
 
@@ -31,7 +31,7 @@ Dependency rule: `api` → `services` → `domain`. `persistence` and `infrastru
 - `app/domain/ports` — ABC only. Need external dependency — define port first.
 - `app/services` — use cases. Only `app.core`, `app.domain`. No SQLAlchemy, FastAPI, `app.models`, `app.persistence`.
 - `app/persistence` — ORM models, repositories, UnitOfWork. Only layer with ORM.
-- `app/infrastructure` — Redis, S3, SMS. Import heavy SDKs lazily.
+- `app/infrastructure` — Redis, S3 (SeaweedFS), SMS. Import heavy SDKs lazily.
 - `app/composition/container.py` — only port assembly. `lru_cache` = singleton.
 - `app/api` — HTTP, Pydantic schemas, dependencies. `HTTPException` here only.
 

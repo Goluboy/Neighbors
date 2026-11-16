@@ -25,7 +25,7 @@ backend/                  # FastAPI (Python 3.12)
 │   └── utils/            # s3, sms (заглушки)
 ├── alembic/              # миграции
 ├── tests/                # pytest (sqlite-in-memory фикстуры)
-├── docker-compose.yml    # PostgreSQL+PostGIS, Redis, MinIO, API
+├── docker-compose.yml    # PostgreSQL+PostGIS, Redis, SeaweedFS, API
 └── Makefile              # run / migrate / upgrade / test / up
 
 docs/                     # API.md, ARCHITECTURE.md

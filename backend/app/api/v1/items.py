@@ -48,7 +48,7 @@ def delete_item(item_id: int, user: User = Depends(get_current_user)):
 
 @router.post("/{item_id}/photos")
 def upload_photo(item_id: int, user: User = Depends(get_current_user)):
-    """multipart-загрузка через бэкенд -> S3/MinIO (валидация размера/типа, сжатие)."""
+    """multipart-загрузка через бэкенд -> S3-совместимое хранилище (SeaweedFS): валидация размера/типа, сжатие."""
     raise NotImplementedError
 
 

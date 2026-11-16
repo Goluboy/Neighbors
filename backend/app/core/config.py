@@ -30,11 +30,11 @@ class Settings(BaseSettings):
     BOOKING_APPROVAL_TIMEOUT_HOURS: int = 24
     REVIEW_VISIBILITY_DELAY_DAYS: int = 3
 
-    # S3 / MinIO
-    S3_ENDPOINT: str = "http://localhost:9000"
+    # S3-совместимое хранилище (локально — SeaweedFS, S3 API на :8333)
+    S3_ENDPOINT: str = "http://localhost:8333"
     S3_BUCKET: str = "neighbors-items"
-    S3_ACCESS_KEY: str = "minioadmin"
-    S3_SECRET_KEY: str = "minioadmin"
+    S3_ACCESS_KEY: str = "neighbors"
+    S3_SECRET_KEY: str = "neighbors-secret"
 
     # Геоданные
     DEFAULT_LOCAL_RADIUS_KM: float = 1.5

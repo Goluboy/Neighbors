@@ -1,8 +1,10 @@
-"""FileStoragePort -> S3/MinIO (boto3). Загрузка фото через бэкенд (решение по открытому вопросу №2)."""
+"""FileStoragePort -> S3-совместимое хранилище (SeaweedFS, boto3). Загрузка фото через бэкенд (решение по открытому вопросу №2)."""
 import mimetypes
 import uuid
 
 import boto3
+from botocore.config import Config
+from botocore.exceptions import ClientError
 
 from app.core.config import settings
 from app.domain.ports.repositories import FileStoragePort
@@ -18,8 +20,19 @@ class S3FileStorage(FileStoragePort):
             endpoint_url=settings.S3_ENDPOINT,
             aws_access_key_id=settings.S3_ACCESS_KEY,
             aws_secret_access_key=settings.S3_SECRET_KEY,
+            # SeaweedFS по умолчанию адресует бакеты только path-style: {endpoint}/{bucket}/{key}
+            config=Config(s3={"addressing_style": "path"}),
         )
         self._bucket = settings.S3_BUCKET
+        self._ensure_bucket()
+
+    def _ensure_bucket(self) -> None:
+        try:
+            self._client.head_bucket(Bucket=self._bucket)
+        except ClientError as exc:
+            if exc.response.get("Error", {}).get("Code") not in ("404", "NoSuchBucket"):
+                raise
+            self._client.create_bucket(Bucket=self._bucket)
 
     @staticmethod
     def validate(data: bytes, content_type: str) -> None:

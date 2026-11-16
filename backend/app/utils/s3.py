@@ -1,5 +1,6 @@
-"""S3/MinIO client (заглушка интерфейса). Загрузка фото через бэкенд."""
+"""S3-совместимый клиент (SeaweedFS) — заглушка интерфейса. Загрузка фото через бэкенд."""
 import boto3
+from botocore.config import Config
 
 from app.core.config import settings
 
@@ -10,6 +11,8 @@ def get_s3_client():
         endpoint_url=settings.S3_ENDPOINT,
         aws_access_key_id=settings.S3_ACCESS_KEY,
         aws_secret_access_key=settings.S3_SECRET_KEY,
+        # SeaweedFS по умолчанию адресует бакеты только path-style: {endpoint}/{bucket}/{key}
+        config=Config(s3={"addressing_style": "path"}),
     )
 
 

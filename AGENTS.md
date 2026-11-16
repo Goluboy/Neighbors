@@ -45,10 +45,12 @@ Frontend is a separate project and is not in this repository.
 
 ## Git
 
-- Conventional Commits: `type(scope): summary`, scope is the area (`backend`, `ci`, `docs`,
-  `compose`). Subject and body in Russian, matching the existing history.
-- The body says why the change exists and what behavior changed. One line only is not enough for a
-  behavior change.
+- Conventional Commits: `type(scope): summary`. Scope is the area (`backend`, `ci`, `docs`,
+  `compose`).
+- Subject in English, body in Russian. The subject is a short imperative summary; the body says why
+  the change exists and what behavior changed. One line only is not enough for a behavior change.
+- Older commits in this repository use Russian subjects. Leave them alone; the rule applies to new
+  commits.
 - No commit-msg hook: the format is a convention, not a gate.
 - Do not mix unrelated changes in one commit. Mechanical reformatting goes in its own commit.
 - Branch from `origin/main`. Do not commit to `main`, do not push, force-push, or open a PR

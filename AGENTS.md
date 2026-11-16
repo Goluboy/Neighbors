@@ -1,0 +1,1 @@
+Читай правила из backend/AGENTS.md

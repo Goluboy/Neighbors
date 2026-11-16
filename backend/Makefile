@@ -1,14 +1,14 @@
 run:
-uvicorn app.main:app --reload --port 8000
+	uvicorn app.main:app --reload --port 8000
 
 migrate:
-alembic revision --autogenerate -m "schema"
+	alembic revision --autogenerate -m "schema"
 
 upgrade:
-alembic upgrade head
+	alembic upgrade head
 
 test:
-pytest tests -v
+	pytest tests -v
 
 up:
-docker compose up -d
+	docker compose up -d

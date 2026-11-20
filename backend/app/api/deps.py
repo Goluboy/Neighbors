@@ -20,6 +20,7 @@ from app.persistence.unit_of_work import SqlAlchemyUnitOfWork
 from app.services.auth_service import AuthService
 from app.services.booking_service import BookingService
 from app.services.catalog_service import CatalogService
+from app.services.category_service import CategoryService
 from app.services.item_service import ItemService
 from app.services.profile_service import ProfileService
 
@@ -56,6 +57,10 @@ def get_item_service(uow: SqlAlchemyUnitOfWork = Depends(get_uow)) -> ItemServic
 
 def get_catalog_service(uow: SqlAlchemyUnitOfWork = Depends(get_uow)) -> CatalogService:
     return CatalogService(items=uow.items)
+
+
+def get_category_service(uow: SqlAlchemyUnitOfWork = Depends(get_uow)) -> CategoryService:
+    return CategoryService(categories=uow.categories)
 
 
 def get_booking_service(

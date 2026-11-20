@@ -17,5 +17,8 @@
 | reports | POST /reports, GET /reports/me | UC-10 |
 | admin | GET /admin/disputes[/{id}], POST resolve; /admin/reports[/{id}/resolve]; /admin/users/{id}/ban/unban; /admin/categories | UC-9, UC-10 |
 
+`GET /categories` возвращает только активные категории; несуществующий или неактивный slug
+в `GET /categories/{slug}` отвечает `404`.
+
 Полные схемы запросов/ответов — в Swagger UI (`/docs`) после запуска;
 Pydantic-модели: `app/api/schemas.py`.

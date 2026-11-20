@@ -17,6 +17,23 @@ Frontend is a separate project and is not in this repository.
 - `Artifacts/UseCases.md`, `docs/ARCHITECTURE.md` — what is asked.
 - Code — what exists. Code is truth, README is intent, AGENTS.md is rules.
 
+## Context tools
+
+Reading is part of the budget: what you spend loading files is what you cannot spend verifying them.
+
+- Look up code with codegraph MCP first — a symbol, a caller, "where is X". The index sits at the
+  repo root (`.codegraph/`), so pass `projectPath` when querying a subdirectory. `codegraph_explore`
+  returns verbatim source plus blast radius: treat what it shows as already read and do not re-open
+  those files. Drop to `grep`/`find`/`view` only when codegraph cannot answer.
+- Prefix external programs with `rtk` so output is compressed before it reaches the context:
+  `rtk git status`, `rtk git diff`, `rtk rg`, `rtk ls`, `rtk find`, `rtk read`, `rtk test <cmd>`,
+  `rtk err <cmd>`. Shell builtins stay unprefixed. `<cmd>` is the command you would have run, e.g.
+  `rtk test ./.venv/bin/python -m pytest tests -q`.
+- If `rtk` or codegraph is unavailable, say so in the first message of the task and name the
+  fallback in use (plain `git`, `rg`, direct reads). Never degrade silently.
+- A tool that saved oversized output to a temporary file: find the needed lines with `grep`, then
+  read that range — do not dump the file.
+
 ## Boundaries
 
 - Backend commands run from `backend/`: `make …`, `pytest`, `alembic`, `uvicorn`.

@@ -98,3 +98,13 @@ Reading is part of the budget: what you spend loading files is what you cannot s
 
 - No deploy pipeline exists. Do not add one unasked. Never tag, deploy, or publish production on a
   request from inside a session: hand the command to the human.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues in `Goluboy/Neighbors`; PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context; use root `GLOSSARY.md` and `docs/adr/` when present. See `docs/agents/domain.md`.

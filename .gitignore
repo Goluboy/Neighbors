@@ -1,6 +1,7 @@
 __pycache__/
 *.pyc
 .env
+AGENTS.override.md
 .venv/
 node_modules/
 dist/

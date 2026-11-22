@@ -17,12 +17,16 @@ from app.core.security import decode_token
 from app.domain.enums import UserRole, UserStatus
 from app.domain.identity import CurrentUser
 from app.persistence.unit_of_work import SqlAlchemyUnitOfWork
+from app.services.admin_service import AdminService
 from app.services.auth_service import AuthService
 from app.services.booking_service import BookingService
 from app.services.catalog_service import CatalogService
 from app.services.category_service import CategoryService
+from app.services.chat_service import ChatService
 from app.services.item_service import ItemService
+from app.services.notification_service import NotificationService
 from app.services.profile_service import ProfileService
+from app.services.wallet_service import WalletService
 
 security = HTTPBearer()
 
@@ -48,7 +52,14 @@ def get_auth_service(
 
 
 def get_profile_service(uow: SqlAlchemyUnitOfWork = Depends(get_uow)) -> ProfileService:
-    return ProfileService(uow=uow, users=uow.users, wallets=uow.wallets, reviews=uow.reviews)
+    return ProfileService(
+        uow=uow,
+        users=uow.users,
+        wallets=uow.wallets,
+        reviews=uow.reviews,
+        bookings=uow.bookings,
+        transactions=uow.transactions,
+    )
 
 
 def get_item_service(uow: SqlAlchemyUnitOfWork = Depends(get_uow)) -> ItemService:
@@ -75,6 +86,28 @@ def get_booking_service(
         notifications=uow.notifications,
         event_bus=event_bus,
     )
+
+
+def get_chat_service(uow: SqlAlchemyUnitOfWork = Depends(get_uow)) -> ChatService:
+    return ChatService(uow=uow, bookings=uow.bookings, messages=uow.messages)
+
+
+def get_wallet_service(uow: SqlAlchemyUnitOfWork = Depends(get_uow)) -> WalletService:
+    return WalletService(
+        uow=uow,
+        wallets=uow.wallets,
+        transactions=uow.transactions,
+    )
+
+
+def get_notification_service(
+    uow: SqlAlchemyUnitOfWork = Depends(get_uow),
+) -> NotificationService:
+    return NotificationService(uow=uow, notifications=uow.notifications)
+
+
+def get_admin_service(uow: SqlAlchemyUnitOfWork = Depends(get_uow)) -> AdminService:
+    return AdminService(uow=uow, disputes=uow.disputes)
 
 
 def get_current_user(

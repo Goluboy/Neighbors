@@ -2,9 +2,10 @@
 
 from fastapi import APIRouter, Depends, WebSocket
 
-from app.api.deps import get_current_user
+from app.api.deps import get_chat_service, get_current_user
 from app.api.schemas import MessageCreate, MessageOut
 from app.domain.identity import CurrentUser
+from app.services.chat_service import ChatService
 
 router = APIRouter(tags=["chat"])
 
@@ -15,28 +16,40 @@ def list_messages(
     cursor: str | None = None,
     limit: int = 50,
     user: CurrentUser = Depends(get_current_user),
+    service: ChatService = Depends(get_chat_service),
 ):
-    raise NotImplementedError
+    rows, _ = service.list_messages(booking_id, user.id, cursor, limit)
+    return rows
 
 
 @router.post("/bookings/{booking_id}/messages", response_model=MessageOut, status_code=201)
 def send_message(
-    booking_id: int, data: MessageCreate, user: CurrentUser = Depends(get_current_user)
+    booking_id: int,
+    data: MessageCreate,
+    user: CurrentUser = Depends(get_current_user),
+    service: ChatService = Depends(get_chat_service),
 ):
     """Номера телефонов не раскрываются — вся коммуникация только здесь."""
-    raise NotImplementedError
+    return service.send_message(booking_id, user.id, data.content)
 
 
 @router.post("/bookings/{booking_id}/messages/read")
 def mark_read(
-    booking_id: int, until_message_id: int, user: CurrentUser = Depends(get_current_user)
+    booking_id: int,
+    until_message_id: int,
+    user: CurrentUser = Depends(get_current_user),
+    service: ChatService = Depends(get_chat_service),
 ):
-    raise NotImplementedError
+    service.mark_read(booking_id, user.id, until_message_id)
+    return {"detail": "read"}
 
 
 @router.get("/chats/unread-count")
-def unread_count(user: CurrentUser = Depends(get_current_user)):
-    raise NotImplementedError
+def unread_count(
+    user: CurrentUser = Depends(get_current_user),
+    service: ChatService = Depends(get_chat_service),
+):
+    return {"total_unread": service.unread_count(user.id)}
 
 
 # WebSocket: wss://.../api/v1/ws/bookings/{booking_id}/chat (JWT в query/message).

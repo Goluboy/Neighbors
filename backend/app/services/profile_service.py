@@ -10,12 +10,32 @@ from app.domain.ports.repositories import ReviewRepository, UserRepository, Wall
 
 class ProfileService:
     def __init__(
-        self, *, uow, users: UserRepository, wallets: WalletRepository, reviews: ReviewRepository
+        self,
+        *,
+        uow,
+        users: UserRepository,
+        wallets: WalletRepository,
+        reviews: ReviewRepository,
+        bookings,
+        transactions,
     ):
         self.uow = uow
         self.users = users
         self.wallets = wallets
         self.reviews = reviews
+        self.bookings = bookings
+        self.transactions = transactions
+
+    def history(self, user_id: int):
+        renter_bookings = self.bookings.list_for_renter(user_id, None)
+        owner_bookings = self.bookings.list_for_owner(user_id, None)
+        bookings = {booking.id: booking for booking in [*renter_bookings, *owner_bookings]}
+        transactions, _ = self.transactions.list_by_user(user_id, None, None, 100)
+        return {
+            "bookings": list(bookings.values()),
+            "transactions": transactions,
+            "next_cursor": None,
+        }
 
     def get_profile(self, user_id: int):
         user = self.users.get(user_id)

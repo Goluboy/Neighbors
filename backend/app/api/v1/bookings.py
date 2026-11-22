@@ -3,6 +3,8 @@
 Жизненный цикл: pending -> approved/rejected -> rented -> returned/disputed/cancelled
 """
 
+from typing import Literal
+
 from fastapi import APIRouter, Depends
 
 from app.api.deps import get_booking_service, get_current_user
@@ -25,16 +27,21 @@ def create_booking(
 
 @router.get("/me", response_model=list[BookingOut])
 def my_bookings(
-    as_role: str = "renter",
+    as_role: Literal["renter", "owner"] = "renter",
     status: str | None = None,
     user: CurrentUser = Depends(get_current_user),
+    service: BookingService = Depends(get_booking_service),
 ):
-    raise NotImplementedError
+    return service.list_for_user(user.id, as_role, status)
 
 
 @router.get("/{booking_id}", response_model=BookingOut)
-def get_booking(booking_id: int, user: CurrentUser = Depends(get_current_user)):
-    raise NotImplementedError
+def get_booking(
+    booking_id: int,
+    user: CurrentUser = Depends(get_current_user),
+    service: BookingService = Depends(get_booking_service),
+):
+    return service.get_booking(booking_id, user.id)
 
 
 # --- действия владельца ---

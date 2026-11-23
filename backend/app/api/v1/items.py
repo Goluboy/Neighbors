@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 
 from app.api.deps import get_current_user, get_item_service
 from app.api.schemas import ItemCreate, ItemOut, ItemUpdate
+from app.domain.enums import ItemStatus
 from app.domain.identity import CurrentUser
 from app.services.item_service import ItemService
 
@@ -27,18 +28,23 @@ def create_item(
     )
 
 
-@router.get("/me")
+@router.get("/me", response_model=list[ItemOut])
 def my_items(
-    status: str | None = None,
+    status: ItemStatus | None = None,
     user: CurrentUser = Depends(get_current_user),
+    service: ItemService = Depends(get_item_service),
 ):
-    raise NotImplementedError
+    return service.list_owned(user.id, status)
 
 
 @router.get("/{item_id}", response_model=ItemOut)
-def get_item(item_id: int, user: CurrentUser = Depends(get_current_user)):
-    """Карточка: фото, описание, залог, рейтинг владельца, расстояние (не адрес)."""
-    raise NotImplementedError
+def get_item(
+    item_id: int,
+    user: CurrentUser = Depends(get_current_user),
+    service: ItemService = Depends(get_item_service),
+):
+    """Карточка объявления без приватных данных владельца."""
+    return service.get_for_viewer(item_id, user.id)
 
 
 @router.patch("/{item_id}", response_model=ItemOut)

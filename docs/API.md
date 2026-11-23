@@ -17,5 +17,12 @@
 | reports | POST /reports, GET /reports/me | UC-10 |
 | admin | GET /admin/disputes[/{id}], POST resolve; /admin/reports[/{id}/resolve]; /admin/users/{id}/ban/unban; /admin/categories | UC-9, UC-10 |
 
+`GET /categories` возвращает только активные категории; несуществующий или неактивный slug
+в `GET /categories/{slug}` отвечает `404`.
+`GET /items/me` требует авторизацию и возвращает массив объявлений текущего пользователя;
+параметр `status` фильтрует результат. `GET /items/{id}` также требует авторизацию:
+скрытое объявление доступно только владельцу, для остальных оно неотличимо от отсутствующего
+и отвечает `404`.
+
 Полные схемы запросов/ответов — в Swagger UI (`/docs`) после запуска;
 Pydantic-модели: `app/api/schemas.py`.

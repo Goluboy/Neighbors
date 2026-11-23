@@ -2,17 +2,21 @@ openapi: 3.1.0
 info:
   title: Neighborhood Rental API
   description: |
+    Aspirational MVP contract. The endpoints and schemas in this document describe the
+    future implementation and may include endpoints that are not registered in runtime yet.
+
     Платформа для обмена вещами между соседями в пределах ЖК/микрорайона.
     Аренда инструментов, техники, спортинвентаря с системой залогов,
     рейтингов и модерации споров.
   version: 0.0.0
+  x-lifecycle: aspirational
   contact:
     name: API Support
 
 servers:
   - url: http://localhost:8000/api/v1
     description: Локальная разработка
-  - url: https://api.example.com/v1
+  - url: https://api.example.com/api/v1
     description: Production
 
 tags:

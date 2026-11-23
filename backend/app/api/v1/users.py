@@ -40,8 +40,11 @@ def set_location(
 
 
 @router.get("/me/history")
-def get_history(user: CurrentUser = Depends(get_current_user)):
-    raise NotImplementedError
+def get_history(
+    user: CurrentUser = Depends(get_current_user),
+    service: ProfileService = Depends(get_profile_service),
+):
+    return service.history(user.id)
 
 
 @router.get("/{user_id}/public", response_model=UserPublic)

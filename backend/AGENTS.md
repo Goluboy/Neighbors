@@ -90,6 +90,21 @@ nothing else should. New code goes to the clean layers.
 - Stop-words come from `app.domain.prohibited`.
 - Stub SMS code is `1234`.
 
+## TDD
+
+TDD is mandatory for every code change. The [`tdd` skill](../.agents/skills/tdd/SKILL.md) is the
+reference for the loop, seams, and test quality; load it before writing a test or its
+implementation.
+
+- Work in vertical slices: one failing test → minimal implementation → next test. Never write a test
+  after the code it covers.
+- Test at public seams only — HTTP endpoints, service methods, ports. Never private helpers or
+  internals.
+- A test asserts behavior through the public interface; expected values come from an independent
+  source (spec, worked example, known-good literal), never recomputed the way the code does.
+- Red before green: the test must fail for the right reason before the implementation exists.
+- Refactoring and review are separate from the red → green loop.
+
 ## Tests
 
 - SQLite in-memory. Do not start PostGIS, Redis, or S3 in tests.

@@ -45,6 +45,19 @@ class BookingService:
         self.event_bus = event_bus
 
     # ---------- UC-3: создание заявки + холд залога ----------
+    def list_for_user(self, user_id: int, as_role: str, status: str | None):
+        if as_role == "owner":
+            return self.bookings.list_for_owner(user_id, status)
+        return self.bookings.list_for_renter(user_id, status)
+
+    def get_booking(self, booking_id: int, user_id: int):
+        booking = self.bookings.get(booking_id)
+        if booking is None:
+            raise NotFoundError("Бронь не найдена")
+        if booking.renter_id != user_id and booking.item.owner_id != user_id:
+            raise NotFoundError("Бронь не найдена")
+        return booking
+
     def create_booking(self, renter_id: int, item_id: int, start_date, end_date):
         item = self.items.get_for_update(item_id)
         if item is None:

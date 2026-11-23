@@ -2,17 +2,21 @@
 
 from fastapi import APIRouter, Depends
 
-from app.api.deps import require_moderator
+from app.api.deps import get_admin_service, require_moderator
 from app.api.schemas import DisputeResolve
 from app.domain.identity import CurrentUser
+from app.services.admin_service import AdminService
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_moderator)])
 
 
 # --- споры по заказам (UC-9) ---
 @router.get("/disputes")
-def list_disputes(status: str = "pending"):
-    raise NotImplementedError
+def list_disputes(
+    status: str = "pending",
+    service: AdminService = Depends(get_admin_service),
+):
+    return service.list_disputes(status)
 
 
 @router.get("/disputes/{dispute_id}")

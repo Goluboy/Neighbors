@@ -59,6 +59,15 @@ class ItemService:
         self.uow.commit()
         return item
 
+    def list_owned(self, owner_id: int, status: ItemStatus | None = None):
+        return self.items.list_by_owner(owner_id, status.value if status else None)
+
+    def get_for_viewer(self, item_id: int, viewer_id: int):
+        item = self.items.get(item_id)
+        if item is None or (item.status == ItemStatus.hidden and item.owner_id != viewer_id):
+            raise NotFoundError("Вещь не найдена")
+        return item
+
     def update_item(self, item_id: int, user_id: int, **fields):
         item = self._get_owned(item_id, user_id)
         if item.status in (ItemStatus.booked, ItemStatus.rented):

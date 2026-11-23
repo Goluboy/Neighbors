@@ -13,6 +13,8 @@ Frontend is a separate project and is not in this repository.
 
 ## Sources of truth
 
+- If `AGENTS.override.md` exists in a directory, use it alongside that directory's `AGENTS.md`;
+  the override takes precedence where instructions conflict.
 - `backend/AGENTS.md` — rules for `backend/`. On conflict with this file it wins.
 - `Artifacts/UseCases.md`, `docs/ARCHITECTURE.md` — what is asked.
 - Code — what exists. Code is truth, README is intent, AGENTS.md is rules.
@@ -81,3 +83,13 @@ Frontend is a separate project and is not in this repository.
 
 - No deploy pipeline exists. Do not add one unasked. Never tag, deploy, or publish production on a
   request from inside a session: hand the command to the human.
+
+## Agent skills
+
+### Issue tracker
+
+GitHub Issues in `Goluboy/Neighbors`; PRs are not a triage surface. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+Single-context; use root `GLOSSARY.md` and `docs/adr/` when present. See `docs/agents/domain.md`.
